@@ -1,0 +1,16 @@
+requests
+fuzzywuzzy
+python-Levenshtein
+nameparser
+sqlalchemy
+pymysql
+lastpass-python
+beautifulsoup4
+google-cloud-secret-manager
+google-cloud-pubsub
+google-auth
+holidays==0.10.3
+colorama
+flask
+imapclient
+html2text

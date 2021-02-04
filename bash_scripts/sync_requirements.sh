@@ -1,0 +1,1 @@
+find /home/nicolas/projects/janium/python/functions -name requirements.txt -exec rsync /home/nicolas/projects/janium/python/functions/functions_requirements.txt {} \;

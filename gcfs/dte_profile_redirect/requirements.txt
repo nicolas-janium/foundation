@@ -1,0 +1,5 @@
+sqlalchemy
+pymysql
+flask
+google-cloud-secret-manager
+google-auth
