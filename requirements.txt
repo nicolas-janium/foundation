@@ -18,3 +18,4 @@ alembic
 pandas
 numpy
 workdays
+cryptography

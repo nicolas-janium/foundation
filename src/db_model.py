@@ -6,7 +6,7 @@ from google.cloud import secretmanager
 from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Integer, String,
                         Text, create_engine, engine, Computed, JSON)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker, backref
 from sqlalchemy.sql import func, false, text
 
 def get_mysql_info():
@@ -50,114 +50,165 @@ Session = sessionmaker(bind=engine)
 class Client(Base):
     __tablename__ = 'client'
 
-    id = Column(String(36), primary_key=True, nullable=False)
-    dateadded = Column(DateTime, server_default=func.now())
-    dateupdated = Column(DateTime, server_default=text('NOW() ON UPDATE NOW()'))
-    firstname = Column(String(100), nullable=False)
-    lastname = Column(String(100), nullable=False)
-    fullname = Column(String(200), Computed("CONCAT(firstname, ' ', lastname)"))
-    title = Column(String(250), nullable=True)
-    company = Column(String(250), nullable=True)
-    location = Column(String(250), nullable=True)
-    email = Column(String(250), nullable=False)
-    campaign_management_email = Column(String(250), nullable=True)
-    phone = Column(String(250), nullable=True)
-    ulinc_id = Column(String(36), nullable=False)
-    ulinc_username = Column(String(100), nullable=False)
-    ulinc_password = Column(String(100), nullable=False)
-    email_app_username = Column(String(100), nullable=True)
-    email_app_password = Column(String(100), nullable=True)
-    email_server_id = Column(String(36), ForeignKey('email_server.id'), nullable=True)
-    new_connection_wh = Column(String(250), nullable=False)
-    new_message_wh = Column(String(250), nullable=False)
-    send_message_wh = Column(String(250), nullable=False)
+    # Primary Keys
+    client_id = Column(String(36), primary_key=True, nullable=False)
+
+    # Foreign Keys
+    client_group_id = Column(String(36), ForeignKey('client_group.id'), nullable=False)
+
+    # Common Columns
     is_active = Column(Boolean, nullable=False, server_default=false())
     is_sending_emails = Column(Boolean, nullable=False, server_default=false())
     is_sending_li_messages = Column(Boolean, nullable=False, server_default=false())
-    is_sendgrid = Column(Boolean, nullable=False, server_default=false())
-    sendgrid_sender_id = Column(String(36), nullable=True)
-    client_manager = Column(String(36), ForeignKey('client_manager.id'), nullable=True)
     is_dte = Column(Boolean, nullable=False, server_default=false())
+
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    full_name = Column(String(200), Computed("CONCAT(first_name, ' ', last_name)"))
+    title = Column(String(250), nullable=True)
+    company = Column(String(250), nullable=True)
+    location = Column(String(250), nullable=True)
+    primary_email = Column(String(250), nullable=False)
+    campaign_management_email = Column(String(250), nullable=True)
+    phone = Column(String(250), nullable=True)
+
+    # ulinc_id = Column(String(36), nullable=False)
+    # ulinc_username = Column(String(100), nullable=False)
+    # ulinc_password = Column(String(100), nullable=False)
+
+    # new_connection_wh = Column(String(250), nullable=False)
+    # new_message_wh = Column(String(250), nullable=False)
+    # send_message_wh = Column(String(250), nullable=False)
+    
+
+    
     dte_email = Column(String(250), nullable=True)
     dte_sender_id = Column(String(36), ForeignKey('dte_sender.id'), nullable=True)
     dte_id = Column(String(36), ForeignKey('dte.id'), nullable=True)
-    assistant_firstname = Column(String(250), nullable=True)
-    assistant_lastname = Column(String(250), nullable=True)
+    assistant_first_name = Column(String(250), nullable=True)
+    assistant_last_name = Column(String(250), nullable=True)
     assistant_email = Column(String(250), nullable=True)
 
-    campaigns = relationship('Campaign', backref='client_campaigns', lazy=True)
-    ulinc_campaigns = relationship('Ulinc_campaign', backref='client_ulinc_campaigns', lazy=False)
-    contacts = relationship('Contact', backref='client_contacts', lazy=False)
-    ulinc_cookie = relationship('Ulinc_cookie', backref='client_ulinc_cookie', lazy=True, uselist=False)
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
 
+    campaigns = relationship('Campaign', backref=backref('campaign_client', uselist=False), lazy=True)
+    ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('ulinc_campaign_client', uselist=False), lazy=False)
+    contacts = relationship('Contact', backref=backref('contact_client', uselist=False), lazy=False)
+    ulinc_cookie = relationship('Ulinc_cookie', backref=backref('ulinc_cookie_client', uselist=False), lazy=True)
+
+class Client_group_manager(Base):
+    __tablename__ = 'client_group_manager'
+
+    client_group_manager_id = Column(String(36), primary_key=True, nullable=False)
+    date_added = Column(DateTime, server_default=func.now())
+    date_updated = Column(DateTime, server_default=text('NOW() ON UPDATE NOW()'))
+
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    full_name = Column(String(200), Computed("CONCAT(first_name, ' ', last_name)"))
+
+    client_groups = relationship('Client_group', backref=backref('client_group_manager', uselist=False), lazy=False)
+
+class Client_group(Base):
+    __tablename__ = 'client_group'
+
+    client_group_id = Column(String(36), primary_key=True, nullable=False)
+    date_added = Column(DateTime, server_default=func.now())
+    date_updated = Column(DateTime, server_default=text('NOW() ON UPDATE NOW()'))
+
+    name = Column(String(250), nullable=False)
+    description = Column(String(1000), nullable=True)
+    is_active = Column(Boolean, nullable=False, server_default=false())
+
+    client_group_manager_id = Column(String(36), ForeignKey('client_group_manager.id'), nullable=False)
+
+    clients = relationship('Client', backref=backref('client_client_group', uselist=False), lazy=False)
 
 class Campaign(Base):
     __tablename__ = 'campaign'
 
-    id = Column(String(36), primary_key=True, nullable=False)
-    dateadded = Column(DateTime, server_default=func.now())
-    client_id = Column(String(36), ForeignKey('client.id'), nullable=False) # Foreign key to client
-    name = Column(String(250), nullable=False)
-    description = Column(String(1000), nullable=True)
+    # Primary Keys
+    campaign_id = Column(String(36), primary_key=True)
 
-    dateupdated = Column(DateTime, server_default=text('NOW() ON UPDATE NOW()'))
+    # Foreign Keys
+    client_id = Column(String(36), ForeignKey('client.id'))
+    credentials_id = Column(String(36), ForeignKey('credentials.credentials_id'))
+
+    # Common Columns
+    campaign_name = Column(String(512), nullable=False)
+    campaign_description = Column(String(512), nullable=True)
     is_active = Column(Boolean, nullable=False, server_default=false())
     is_messenger = Column(Boolean, nullable=False, server_default=false())
-    use_alternate_email = Column(Boolean, nullable=False, server_default=false())
-    is_sendgrid = Column(Boolean, nullable=False, server_default=false())
-    email_app_username = Column(String(100), nullable=True)
-    email_app_password = Column(String(100), nullable=True)
-    email_server_id = Column(String(36), nullable=True)
-    sendgrid_sender_id = Column(String(36), nullable=True)
 
-    send_email_after_wm = Column(Boolean, nullable=False, server_default=false())
-    email_after_wm_body = Column(Text, nullable=True)
-    email_after_wm_subject = Column(String(500), nullable=True)
-    email_after_wm_delay = Column(Integer, nullable=True)
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
 
-    send_followup1_email = Column(Boolean, nullable=False, server_default=false())
-    followup1_email_body = Column(Text, nullable=True)
-    followup1_email_subject = Column(String(500), nullable=True)
-    followup1_email_delay = Column(Integer, nullable=True)
+    # SQLAlchemy Relationships and Backreferences
+    contacts = relationship('Contact', backref='contact_campaign', lazy=False)
+    ulinc_campaigns = relationship('Ulinc_campaign', backref='parent_janium_campaign', lazy=False)
+    campaign_steps = relationship('Campaign_step', backref=backref('parent_campaign', uselist=False), lazy=True)
 
-    send_followup2_email = Column(Boolean, nullable=False, server_default=false())
-    followup2_email_body = Column(Text, nullable=True)
-    followup2_email_subject = Column(String(500), nullable=True)
-    followup2_email_delay = Column(Integer, nullable=True)
+class Campaign_step(Base):
+    __tablename__ = 'campaign_step'
 
-    send_followup3_email = Column(Boolean, nullable=False, server_default=false())
-    followup3_email_body = Column(Text, nullable=True)
-    followup3_email_subject = Column(String(500), nullable=True)
-    followup3_email_delay = Column(Integer, nullable=True)
+    # Primary Keys
+    campaign_step_id = Column(String(36), primary_key=True, nullable=False)
 
-    is_welcome_message = Column(Boolean, nullable=False, server_default=false())
-    welcome_message_text = Column(Text, nullable=True)
-    welcome_message_delay = Column(Integer, nullable=True)
-    is_li_message1 = Column(Boolean, nullable=False, server_default=false())
-    li_message1_text = Column(Text, nullable=True)
-    li_message1_delay = Column(Integer, nullable=True)
-    is_li_message2 = Column(Boolean, nullable=False, server_default=false())
-    li_message2_text = Column(Text, nullable=True)
-    li_message2_delay = Column(Integer, nullable=True)
-    is_li_message3 = Column(Boolean, nullable=False, server_default=false())
-    li_message3_text = Column(Text, nullable=True)
-    li_message3_delay = Column(Integer, nullable=True)
+    # Foreign Keys
+    campaign_id = Column(String(36), ForeignKey('campaign.campaign_id'), nullable=False)
+    campaign_step_type_id = Column(Integer, ForeignKey('campaign_step_type.campaign_step_type_id'), nullable=False)
 
-    has_voicemail1 = Column(Boolean, nullable=False, server_default=false())
-    voicemail1_delay = Column(Integer, nullable=True)
-    has_voicemail2 = Column(Boolean, nullable=False, server_default=false())
-    voicemail2_delay = Column(Integer, nullable=True)
-    has_voicemail3 = Column(Boolean, nullable=False, server_default=false())
-    voicemail3_delay = Column(Integer, nullable=True)
+    # Common Columns
+    campaign_step_delay = Column(Integer, nullable=False)
+    campaign_step_body = Column(Text, nullable=True)
+    campaign_step_subject = Column(String(1000), nullable=False)
 
-    contacts = relationship('Contact', backref='campaign_contacts', lazy=False)
-    ulinc_campaigns = relationship('Ulinc_campaign', backref='campaign_ulinc_campaigns', lazy=False)
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+
+
+class Campaign_step_type(Base):
+    __tablename__ = 'campaign_step_type'
+
+    # Primary Keys
+    campaign_step_type_id = Column(Integer, primary_key=True, auto_increment=True, nullable=False)
+
+    # Foreign Keys
+
+    # Common Columns
+    campaign_step_type = Column(String(64), nullable=False)
+    campaign_step_type_description = Column(String(512), nullable=False)
+
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+    campaign_steps = relationship('Campaign_step', backref=backref('campaign_step_type', uselist=False), lazy=False)
 
 class Ulinc_campaign(Base):
     __tablename__ = 'ulinc_campaign'
 
-    def __init__(self, id, client_id, name, ulinc_is_active, ulinc_campaign_id, ulinc_is_messenger, ulinc_messenger_origin_message):
-        self.id = id
+    def __init__(self, ulinc_campaign_id, client_id, name, ulinc_is_active, ulinc_campaign_id, ulinc_is_messenger, ulinc_messenger_origin_message):
+        self.ulinc_campaign_id = ulinc_campaign_id
         self.client_id = client_id
         self.name = name
         self.ulinc_is_active = ulinc_is_active
@@ -165,32 +216,45 @@ class Ulinc_campaign(Base):
         self.ulinc_is_messenger = ulinc_is_messenger
         self.ulinc_messenger_origin_message = ulinc_messenger_origin_message
 
-    id = Column(String(36), primary_key=True)
-    dateadded = Column(DateTime, server_default=func.now())
-    dateupdated = Column(DateTime, server_default=text('NOW() ON UPDATE NOW()'))
-    client_id = Column(String(36), ForeignKey('client.id'), nullable=False)
-    janium_campaign_id = Column(String(36), ForeignKey('campaign.id'), nullable=True)
-    name = Column(String(250), nullable=False)
+    # Primary Keys
+    ulinc_campaign_id = Column(String(36), primary_key=True)
+    
+    # Foreign Keys
+    client_id = Column(String(36), ForeignKey('client.client_id'), nullable=False)
+    janium_campaign_id = Column(String(36), ForeignKey('campaign.campaign_id'), nullable=True)
+
+    # Common Columns
+    ulinc_campaign_name = Column(String(512), nullable=False)
     ulinc_is_active = Column(Boolean, nullable=False, server_default=false())
-    ulinc_campaign_id = Column(String(20), nullable=False)
+    ulinc_ulinc_campaign_id = Column(String(20), nullable=False)
     ulinc_is_messenger = Column(Boolean, nullable=False, server_default=false())
 
-    contacts = relationship('Contact', backref='ulinc_campaign_contacts', lazy=False)
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
 
+    # SQLAlchemy Relationships and Backreferences
+    contacts = relationship('Contact', backref=backref('contact_ulinc_campaign', uselist=False), lazy=False)
 
 class Contact(Base):
     __tablename__ = 'contact'
 
-    def __init__(self, contact_id, campaign_id, client_id, ulinc_id, ulinc_campaign_id, internal_ulinc_campaign_id, firstname, lastname, title,
-                 company, location, email, phone, website, li_profile_url, from_wh_id):
-        self.id = contact_id
-        self.campaign_id = campaign_id
+    def __init__(self, contact_id, client_id, campaign_id, ulinc_campaign_id, webhook_response_id, ulinc_id, ulinc_ulinc_campaign_id, first_name, last_name, title,
+                 company, location, email, phone, website, li_profile_url):
+        self.contact_id = contact_id
+
         self.client_id = client_id
-        self.ulinc_id = ulinc_id
+        self.campaign_id = campaign_id
         self.ulinc_campaign_id = ulinc_campaign_id
-        self.internal_ulinc_campaign_id = internal_ulinc_campaign_id
-        self.firstname = firstname
-        self.lastname = lastname
+        self.webhook_response_id = webhook_response_id
+
+        self.ulinc_id = ulinc_id
+        self.ulinc_ulinc_campaign_id = ulinc_ulinc_campaign_id
+        self.first_name = first_name
+        self.last_name = last_name
         self.title = title
         self.company = company
         self.location = location
@@ -198,19 +262,22 @@ class Contact(Base):
         self.phone = phone
         self.website = website
         self.li_profile_url = li_profile_url
-        self.from_wh_id = from_wh_id
 
-    id = Column(String(36), primary_key=True, nullable=False)
-    dateadded = Column(DateTime, server_default=func.now())
-    dateupdated = Column(DateTime, server_default=text('NOW() ON UPDATE NOW()'))
-    campaign_id = Column(String(36), ForeignKey('campaign.id'), nullable=False)
-    client_id = Column(String(36), ForeignKey('client.id'), nullable=False)
+    # Primary Keys
+    contact_id = Column(String(36), primary_key=True, nullable=False)
+
+    # Foreign Keys
+    client_id = Column(String(36), ForeignKey('client.client_id'), nullable=False)
+    campaign_id = Column(String(36), ForeignKey('campaign.campaign_id'), nullable=False)
+    ulinc_campaign_id = Column(String(36), ForeignKey('ulinc_campaign.ulinc_campaign_id'), nullable=False)
+    webhook_response_id = Column(String(36), ForeignKey('webhook_response.webhook_response_id'), nullable=False)
+
+    # Common Columns
     ulinc_id = Column(String(20), nullable=False)
-    ulinc_campaign_id = Column(String(20), nullable=False)
-    internal_ulinc_campaign_id = Column(String(36), ForeignKey('ulinc_campaign.id'), nullable=False)
-    firstname = Column(String(100), nullable=False)
-    lastname = Column(String(100), nullable=False)
-    fullname = Column(String(200), Computed("CONCAT(firstname, ' ', lastname)"))
+    ulinc_ulinc_campaign_id = Column(String(20), nullable=False)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    full_name = Column(String(200), Computed("CONCAT(first_name, ' ', last_name)"))
     title = Column(String(250), nullable=True)
     company = Column(String(250), nullable=True)
     location = Column(String(250), nullable=True)
@@ -218,124 +285,305 @@ class Contact(Base):
     phone = Column(String(250), nullable=True)
     website = Column(String(250), nullable=True)
     li_profile_url = Column(String(500), nullable=True)
-    from_wh_id = Column(String(36), ForeignKey('webhook_res.id'), nullable=False)
 
-    actions = relationship('Action', backref='contact_actions', lazy=True)
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+    actions = relationship('Action', backref='action_contact', lazy=True)
 
 
 class Action(Base):
     __tablename__ = 'action'
 
-    def __init__(self, id, contact_id, action_timestamp, action_code, action_message, is_ulinc_messenger_origin, ulinc_messenger_campaign_id):
-        self.id = id
+    def __init__(self, action_id, contact_id, action_type_id, action_timestamp, action_message):
+        self.action_id = action_id
         self.contact_id = contact_id
+        self.action_type_id = action_type_id
         self.action_timestamp = action_timestamp
-        self.action_code = action_code
         self.action_message = action_message
-        self.is_ulinc_messenger_origin = is_ulinc_messenger_origin
-        self.ulinc_messenger_campaign_id = ulinc_messenger_campaign_id
 
-    id = Column(String(36), primary_key=True, nullable=False)
-    contact_id = Column(String(36), ForeignKey('contact.id'), nullable=False)
-    dateadded = Column(DateTime, server_default=func.now())
+    # Primary Keys
+    action_id = Column(String(36), primary_key=True, nullable=False)
+
+    # Foreign Keys
+    contact_id = Column(String(36), ForeignKey('contact.contact_id'), nullable=False)
+    action_type_id = Column(Integer, ForeignKey('action_name.action_type_id'), nullable=False)
+
+    # Common Columns
     action_timestamp = Column(DateTime, nullable=True)
-    action_code = Column(Integer, ForeignKey('action_name.code'), nullable=False)
     action_message = Column(Text, nullable=True)
-    is_ulinc_messenger_origin = Column(Boolean, nullable=False, server_default=false())
-    ulinc_messenger_campaign_id = Column(String(10), nullable=True)
 
-class Action_name(Base):
-    __tablename__ = 'action_name'
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
 
-    def __init__(self, code, name):
-        self.code = code
-        self.name = name
+    # SQLAlchemy Relationships and Backreferences
 
-    code = Column(Integer, nullable=False, primary_key=True)
-    name = Column(String(100), nullable=False)
 
-class Webhook_res(Base):
-    __tablename__ = 'webhook_res'
+class Action_type(Base): # (messenger_origin_message, new_connection_date{backdate contacts})
+    __tablename__ = 'action_type'
 
-    def __init__(self, id, client_id, json_value, wh_type):
-        self.id = id
+    def __init__(self, action_type, action_type_description):
+        self.action_type = action_type
+        self.action_type_description = action_type_description
+
+    # Primary Keys
+    action_type_id = Column(Integer, primary_key=True, auto_increment=True, nullable=False)
+
+    # Foreign Keys
+
+
+    # Common Columns
+    action_type = Column(String(64), nullable=False)
+    action_type_description = Column(String(512), nullable=False)
+
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+    actions = relationship('Action', backref=backref('action_action_name', uselist=False), lazy=False)
+
+class Webhook_response(Base):
+    __tablename__ = 'webhook_response'
+
+    def __init__(self, webhook_response_id, client_id, webhook_response_value, webhook_response_type_id):
+        self.webhook_response_id = webhook_response_id
         self.client_id = client_id
-        self.json_value = json_value
-        self.wh_type = wh_type
+        self.webhook_response_value = webhook_response_value
+        self.webhook_response_type_id = webhook_response_type_id
     
-    id = Column(String(36), primary_key=True, nullable=False)
-    client_id = Column(String(36), ForeignKey('client.id'), nullable=False)
-    dateadded = Column(DateTime, server_default=func.now())
-    json_value = Column(JSON, nullable=False)
-    wh_type = Column(String(50), nullable=False)
+    # Primary Keys
+    webhook_response_id = Column(String(36), primary_key=True, nullable=False)
 
-    contacts = relationship('Contact', backref='webhook_res', lazy=False)
+    # Primary Keys
+    client_id = Column(String(36), ForeignKey('client.client_id'), nullable=False)
+    webhook_response_type_id = Column(Integer, ForeignKey('webhook_response_type.webhook_response_type_id'), nullable=False)
+
+    # Primary Keys
+    webhook_response_value = Column(JSON, nullable=False)
+
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+    contacts = relationship('Contact', backref=backref('webhook_response', uselist=False), lazy=False)
+
+class Webhook_response_type(Base):
+    __tablename__ = 'webhook_response_type'
+
+    def __init__(self, webhook_response_type, webhook_response_type_description):
+        self.webhook_response_type = webhook_response_type
+        self.webhook_res_type_description = webhook_response_type_description
+
+    # Primary Keys
+    webhook_response_type_id = Column(Integer, primary_key=True, auto_increment=True, nullable=False)
+
+    # Foreign Keys
+
+    # Common Columns
+    webhook_response_type = Column(String(64), nullable=False)
+    webhook_response_type_description = Column(String(512), nullable=False)
+
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+
 
 class Dte_sender(Base):
     __tablename__ = 'dte_sender'
 
     id = Column(String(36), primary_key=True)
-    firstname = Column(String(100), nullable=False)
-    lastname = Column(String(100), nullable=False)
-    fullname = Column(String(200), Computed("CONCAT(firstname, ' ', lastname)"))
-    dateadded = Column(DateTime, server_default=func.now())
-    dateupdated = Column(DateTime, server_default=text('NOW() ON UPDATE NOW()'))
-    is_sendgrid = Column(Boolean, nullable=False, server_default=false())
-    email_app_username = Column(String(100), nullable=True)
-    email_app_password = Column(String(100), nullable=True)
-    sendgrid_sender_id = Column(String(36), nullable=True)
+    date_added = Column(DateTime, server_default=func.now())
+    date_updated = Column(DateTime, server_default=text('NOW() ON UPDATE NOW()'))
 
-    clients = relationship('Client', backref='dte_sender', lazy=False)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    full_name = Column(String(200), Computed("CONCAT(first_name, ' ', last_name)"))
 
-class Client_manager(Base):
-    __tablename__ = 'client_manager'
-
-    id = Column(String(36), nullable=False, primary_key=True)
-    firstname = Column(String(100), nullable=False)
-    lastname = Column(String(100), nullable=False)
-    fullname = Column(String(200), Computed("CONCAT(firstname, ' ', lastname)"))
-    email = Column(String(100), nullable=False)
-
-    clients = relationship('Client', backref='client_manager_clients', lazy=False)
-    dtes = relationship('Dte', backref='client_manager_dtes', lazy=False)
+    email_credentials_id = Column(String(36), ForeignKey('email_credentials.id'))
 
 class Dte(Base):
     __tablename__ = 'dte'
 
     id = Column(String(36), nullable=False, primary_key=True)
+    date_added = Column(DateTime, server_default=func.now())
+    date_updated = Column(DateTime, server_default=text('NOW() ON UPDATE NOW()'))
+
     name = Column(String(250), nullable=False)
     description = Column(String(1000), nullable=True)
-    client_manager_id = Column(String(36), ForeignKey('client_manager.id'), nullable=False)
     subject = Column(String(1000), nullable=False)
     body = Column(Text, nullable=False)
 
     clients = relationship('Client', backref='dte', lazy=False)
 
+class Credentials(Base):
+    __tablename__ = 'credentials'
+
+    # Primary Keys
+    credentials_id = Column(String(36), primary_key=True)
+
+    # Foreign Keys
+    client_id = Column(String(36), ForeignKey('client.client_id'))
+    credentials_type_id = Column(Integer, ForeignKey('credentials_type.credentials_type_id'))
+    email_server_id = Column(Integer, ForeignKey('email_server.email_server_id'))
+
+    # Common Columns
+    username = Column(String(128), nullable=True)
+    password = Column(String(128), nullable=True)
+    email_sender_id = Column(String(128), nullable=True)
+
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+    clients = relationship('Client', backref=backref('client_credentials', uselist=True))
+    campaigns = relationship('Campaign', backref=backref('campaign_credentials', uselist=False))
+    dte_senders = relationship('Dte_sender', backref=backref('dte_sender_email_credentials', uselist=False))
+
+class Credentials_type(Base):
+    __tablename__ = 'credentials_type'
+
+    # Primary Keys
+    credentials_type_id = Column(Integer, primary_key=True, auto_increment=True)
+
+    # Foreign Keys
+
+
+    # Common Columns
+    credentials_type = Column(String(64), nullable=False)
+    credentials_type_description = Column(String(512), nullable=True)
+    credentials_type_login_url = Column(String(1024), nullable=True)
+
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+
+
+class Ulinc_client_info(Base):
+    __tablename__ = 'ulinc_client_info'
+
+    # Primary Keys
+    ulinc_client_info_id = Column(String(36), primary_key=True)
+
+    # Foreign Keys
+    credentials_id = Column(String(36), ForeignKey('credentials.credentials_id'))
+    cookie_id = Column(String(36), ForeignKey('cookie.cookie_id'))
+
+    # Common Columns
+    client_ulinc_id = Column(String(16), nullable=False)
+    new_connection_webhook = Column(String(256), nullable=False)
+    new_message_webhook = Column(String(256), nullable=False)
+    send_message_webhook = Column(String(256), nullable=False)
+
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+
+
+class Cookie(Base):
+    __tablename__ = 'cookie'
+
+    # Primary Keys
+    cookie_id = Column(String(36), primary_key=True)
+
+    # Foreign Keys
+    cookie_type_id = Column(Integer, ForeignKey('cookie_type.cookie_type_id'))
+
+    # Common Columns
+    cookie_json_value = Column(JSON, nullable=False)
+
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+
+
+class Cookie_type(Base):
+    __tablename__ = 'cookie_type'
+
+    # Primary Keys
+    cookie_type_id = Column(Integer, primary_key=True, auto_increment=True)
+
+    # Foreign Keys
+
+
+    # Common Columns
+    cookie_type = Column(String(64), nullable=False)
+    cookie_type_description = Column(String(512), nullable=True)
+    cookie_type_website_url = Column(String(1024), nullable=True)
+
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
+
+    # SQLAlchemy Relationships and Backreferences
+
 
 class Email_server(Base):
     __tablename__ = 'email_server'
 
-    id = Column(String(36), primary_key=True)
-    name = Column(String(100), nullable=False)
-    smtp_address = Column(String(100), nullable=False)
+    # Primary Keys
+    email_server_id = Column(String(36), primary_key=True)
+
+    # Foreign Keys
+
+
+    # Common Columns
+    email_server_name = Column(String(64), nullable=False)
+    smtp_address = Column(String(64), nullable=False)
     smtp_tls_port = Column(Integer, nullable=False)
     smtp_ssl_port = Column(Integer, nullable=False)
-    imap_address = Column(String(100), nullable=True)
-    imap_ssl_port = Column(Integer, nullable=True)
+    imap_address = Column(String(64), nullable=False)
+    imap_ssl_port = Column(Integer, nullable=False)
 
-class Ulinc_cookie(Base):
-    __tablename__ = 'ulinc_cookie'
+    # Table Metadata
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    effective_start_date = Column(DateTime, server_default=func.now())
+    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updatedBy = Column(String(36), nullable=False)
 
-    def __init__(self, id, client_id, usr, pwd, expires):
-        self.id = id
-        self.client_id = client_id
-        self.usr = usr
-        self.pwd = pwd
-        self.expires = expires
-
-    id = Column(String(36), primary_key=True)
-    dateadded = Column(DateTime, server_default=func.now())
-    client_id = Column(String(36), ForeignKey('client.id'), nullable=False)
-    usr = Column(String(100), nullable=False)
-    pwd = Column(String(100), nullable=False)
-    expires = Column(DateTime, nullable=False)
+    # SQLAlchemy Relationships and Backreferences
+    credentials = relationship('Credentials', backref=backref('credentials_email_server', uselist=False))
