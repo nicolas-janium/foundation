@@ -210,6 +210,7 @@ def main(event, context):
         if len(webhook_response_id_list) > 0:
             for webhook_response_id in webhook_response_id_list:
                 handle_webhook_response(client, webhook_response_id, session)
+    logger.info('Polled webhooks for {}'.format(sorted(list(set(clients_list)))))
 
 
 if __name__ == '__main__':
