@@ -1,8 +1,8 @@
 """first revision
 
-Revision ID: 4e643980d2fd
+Revision ID: d43942ab3b74
 Revises: 
-Create Date: 2021-02-09 16:47:13.290869
+Create Date: 2021-02-10 11:38:55.972910
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '4e643980d2fd'
+revision = 'd43942ab3b74'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -28,17 +28,6 @@ def upgrade():
     sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
     sa.PrimaryKeyConstraint('action_type_id')
-    )
-    op.create_table('campaign_step_type',
-    sa.Column('campaign_step_type_id', sa.Integer(), nullable=False),
-    sa.Column('campaign_step_type', sa.String(length=64), nullable=False),
-    sa.Column('campaign_step_type_description', sa.String(length=512), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
-    sa.PrimaryKeyConstraint('campaign_step_type_id')
     )
     op.create_table('client_group_manager',
     sa.Column('client_group_manager_id', sa.String(length=36), nullable=False),
@@ -64,17 +53,16 @@ def upgrade():
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
     sa.PrimaryKeyConstraint('cookie_type_id')
     )
-    op.create_table('credentials_type',
-    sa.Column('credentials_type_id', sa.Integer(), nullable=False),
-    sa.Column('credentials_type', sa.String(length=64), nullable=False),
-    sa.Column('credentials_type_description', sa.String(length=512), nullable=True),
-    sa.Column('credentials_type_login_url', sa.String(length=1024), nullable=True),
+    op.create_table('credentials',
+    sa.Column('credentials_id', sa.String(length=36), nullable=False),
+    sa.Column('username', sa.String(length=128), nullable=True),
+    sa.Column('password', sa.String(length=128), nullable=True),
     sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
-    sa.PrimaryKeyConstraint('credentials_type_id')
+    sa.PrimaryKeyConstraint('credentials_id')
     )
     op.create_table('dte',
     sa.Column('dte_id', sa.String(length=36), nullable=False),
@@ -88,18 +76,6 @@ def upgrade():
     sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
     sa.PrimaryKeyConstraint('dte_id')
-    )
-    op.create_table('dte_sender',
-    sa.Column('dte_sender_id', sa.String(length=36), nullable=False),
-    sa.Column('first_name', sa.String(length=100), nullable=False),
-    sa.Column('last_name', sa.String(length=100), nullable=False),
-    sa.Column('full_name', sa.String(length=200), sa.Computed("CONCAT(first_name, ' ', last_name)", ), nullable=True),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
-    sa.PrimaryKeyConstraint('dte_sender_id')
     )
     op.create_table('email_server',
     sa.Column('email_server_id', sa.String(length=36), nullable=False),
@@ -116,6 +92,17 @@ def upgrade():
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
     sa.PrimaryKeyConstraint('email_server_id')
     )
+    op.create_table('janium_campaign_step_type',
+    sa.Column('janium_campaign_step_type_id', sa.Integer(), nullable=False),
+    sa.Column('janium_campaign_step_type', sa.String(length=64), nullable=False),
+    sa.Column('janium_campaign_step_type_description', sa.String(length=512), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
+    sa.PrimaryKeyConstraint('janium_campaign_step_type_id')
+    )
     op.create_table('webhook_response_type',
     sa.Column('webhook_response_type_id', sa.Integer(), nullable=False),
     sa.Column('webhook_response_type', sa.String(length=64), nullable=False),
@@ -126,6 +113,64 @@ def upgrade():
     sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
     sa.PrimaryKeyConstraint('webhook_response_type_id')
+    )
+    op.create_table('cookie',
+    sa.Column('cookie_id', sa.String(length=36), nullable=False),
+    sa.Column('cookie_type_id', sa.Integer(), nullable=True),
+    sa.Column('cookie_json_value', sa.JSON(), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
+    sa.ForeignKeyConstraint(['cookie_type_id'], ['cookie_type.cookie_type_id'], ),
+    sa.PrimaryKeyConstraint('cookie_id')
+    )
+    op.create_table('email_config',
+    sa.Column('email_config_id', sa.String(length=36), nullable=False),
+    sa.Column('credentials_id', sa.String(length=36), nullable=True),
+    sa.Column('email_server_id', sa.String(length=36), nullable=True),
+    sa.Column('is_sendgrid', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('sendgrid_sender_id', sa.String(length=36), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
+    sa.ForeignKeyConstraint(['credentials_id'], ['credentials.credentials_id'], ),
+    sa.ForeignKeyConstraint(['email_server_id'], ['email_server.email_server_id'], ),
+    sa.PrimaryKeyConstraint('email_config_id')
+    )
+    op.create_table('dte_sender',
+    sa.Column('dte_sender_id', sa.String(length=36), nullable=False),
+    sa.Column('email_config_id', sa.String(length=36), nullable=True),
+    sa.Column('first_name', sa.String(length=100), nullable=False),
+    sa.Column('last_name', sa.String(length=100), nullable=False),
+    sa.Column('full_name', sa.String(length=200), sa.Computed("CONCAT(first_name, ' ', last_name)", ), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
+    sa.ForeignKeyConstraint(['email_config_id'], ['email_config.email_config_id'], ),
+    sa.PrimaryKeyConstraint('dte_sender_id')
+    )
+    op.create_table('ulinc_config',
+    sa.Column('ulinc_config_id', sa.String(length=36), nullable=False),
+    sa.Column('credentials_id', sa.String(length=36), nullable=True),
+    sa.Column('cookie_id', sa.String(length=36), nullable=True),
+    sa.Column('client_ulinc_id', sa.String(length=16), nullable=False),
+    sa.Column('new_connection_webhook', sa.String(length=256), nullable=False),
+    sa.Column('new_message_webhook', sa.String(length=256), nullable=False),
+    sa.Column('send_message_webhook', sa.String(length=256), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
+    sa.ForeignKeyConstraint(['cookie_id'], ['cookie.cookie_id'], ),
+    sa.ForeignKeyConstraint(['credentials_id'], ['credentials.credentials_id'], ),
+    sa.PrimaryKeyConstraint('ulinc_config_id')
     )
     op.create_table('client_group',
     sa.Column('client_group_id', sa.String(length=36), nullable=False),
@@ -148,10 +193,13 @@ def upgrade():
     op.create_table('client',
     sa.Column('client_id', sa.String(length=36), nullable=False),
     sa.Column('client_group_id', sa.String(length=36), nullable=True),
+    sa.Column('ulinc_config_id', sa.String(length=36), nullable=True),
+    sa.Column('email_config_id', sa.String(length=36), nullable=True),
     sa.Column('is_active', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('is_sending_emails', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('is_sending_li_messages', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('is_dte', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('is_assistant', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('first_name', sa.String(length=126), nullable=False),
     sa.Column('last_name', sa.String(length=126), nullable=False),
     sa.Column('full_name', sa.String(length=256), sa.Computed("CONCAT(first_name, ' ', last_name)", ), nullable=True),
@@ -172,46 +220,31 @@ def upgrade():
     sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
     sa.ForeignKeyConstraint(['client_group_id'], ['client_group.client_group_id'], ),
+    sa.ForeignKeyConstraint(['email_config_id'], ['email_config.email_config_id'], ),
+    sa.ForeignKeyConstraint(['ulinc_config_id'], ['ulinc_config.ulinc_config_id'], ),
     sa.PrimaryKeyConstraint('client_id')
     )
-    op.create_table('cookie',
-    sa.Column('cookie_id', sa.String(length=36), nullable=False),
-    sa.Column('cookie_type_id', sa.Integer(), nullable=True),
+    op.create_table('janium_campaign',
+    sa.Column('janium_campaign_id', sa.String(length=36), nullable=False),
     sa.Column('client_id', sa.String(length=36), nullable=True),
-    sa.Column('cookie_json_value', sa.JSON(), nullable=False),
+    sa.Column('email_config_id', sa.String(length=36), nullable=True),
+    sa.Column('janium_campaign_name', sa.String(length=512), nullable=False),
+    sa.Column('janium_campaign_description', sa.String(length=512), nullable=True),
+    sa.Column('is_active', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('is_messenger', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
     sa.ForeignKeyConstraint(['client_id'], ['client.client_id'], ),
-    sa.ForeignKeyConstraint(['cookie_type_id'], ['cookie_type.cookie_type_id'], ),
-    sa.PrimaryKeyConstraint('cookie_id')
-    )
-    op.create_table('credentials',
-    sa.Column('credentials_id', sa.String(length=36), nullable=False),
-    sa.Column('client_id', sa.String(length=36), nullable=True),
-    sa.Column('dte_sender_id', sa.String(length=36), nullable=True),
-    sa.Column('credentials_type_id', sa.Integer(), nullable=True),
-    sa.Column('email_server_id', sa.String(length=36), nullable=True),
-    sa.Column('username', sa.String(length=128), nullable=True),
-    sa.Column('password', sa.String(length=128), nullable=True),
-    sa.Column('sendgrid_sender_id', sa.String(length=128), nullable=True),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
-    sa.ForeignKeyConstraint(['client_id'], ['client.client_id'], ),
-    sa.ForeignKeyConstraint(['credentials_type_id'], ['credentials_type.credentials_type_id'], ),
-    sa.ForeignKeyConstraint(['dte_sender_id'], ['dte_sender.dte_sender_id'], ),
-    sa.ForeignKeyConstraint(['email_server_id'], ['email_server.email_server_id'], ),
-    sa.PrimaryKeyConstraint('credentials_id')
+    sa.ForeignKeyConstraint(['email_config_id'], ['email_config.email_config_id'], ),
+    sa.PrimaryKeyConstraint('janium_campaign_id')
     )
     op.create_table('webhook_response',
     sa.Column('webhook_response_id', sa.String(length=36), nullable=False),
-    sa.Column('client_id', sa.String(length=36), nullable=False),
-    sa.Column('webhook_response_type_id', sa.Integer(), nullable=False),
+    sa.Column('client_id', sa.String(length=36), nullable=True),
+    sa.Column('webhook_response_type_id', sa.Integer(), nullable=True),
     sa.Column('webhook_response_value', sa.JSON(), nullable=False),
     sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
@@ -222,55 +255,22 @@ def upgrade():
     sa.ForeignKeyConstraint(['webhook_response_type_id'], ['webhook_response_type.webhook_response_type_id'], ),
     sa.PrimaryKeyConstraint('webhook_response_id')
     )
-    op.create_table('campaign',
-    sa.Column('campaign_id', sa.String(length=36), nullable=False),
-    sa.Column('client_id', sa.String(length=36), nullable=True),
-    sa.Column('credentials_id', sa.String(length=36), nullable=True),
-    sa.Column('campaign_name', sa.String(length=512), nullable=False),
-    sa.Column('campaign_description', sa.String(length=512), nullable=True),
-    sa.Column('is_active', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('is_messenger', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    op.create_table('janium_campaign_step',
+    sa.Column('janium_campaign_step_id', sa.String(length=36), nullable=False),
+    sa.Column('janium_campaign_id', sa.String(length=36), nullable=False),
+    sa.Column('janium_campaign_step_type_id', sa.Integer(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), server_default=sa.text('true'), nullable=False),
+    sa.Column('janium_campaign_step_delay', sa.Integer(), nullable=False),
+    sa.Column('janium_campaign_step_body', sa.Text(), nullable=True),
+    sa.Column('janium_campaign_step_subject', sa.String(length=1000), nullable=True),
     sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
-    sa.ForeignKeyConstraint(['client_id'], ['client.client_id'], ),
-    sa.ForeignKeyConstraint(['credentials_id'], ['credentials.credentials_id'], ),
-    sa.PrimaryKeyConstraint('campaign_id')
-    )
-    op.create_table('ulinc_client_info',
-    sa.Column('ulinc_client_info_id', sa.String(length=36), nullable=False),
-    sa.Column('credentials_id', sa.String(length=36), nullable=True),
-    sa.Column('cookie_id', sa.String(length=36), nullable=True),
-    sa.Column('client_ulinc_id', sa.String(length=16), nullable=False),
-    sa.Column('new_connection_webhook', sa.String(length=256), nullable=False),
-    sa.Column('new_message_webhook', sa.String(length=256), nullable=False),
-    sa.Column('send_message_webhook', sa.String(length=256), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
-    sa.ForeignKeyConstraint(['cookie_id'], ['cookie.cookie_id'], ),
-    sa.ForeignKeyConstraint(['credentials_id'], ['credentials.credentials_id'], ),
-    sa.PrimaryKeyConstraint('ulinc_client_info_id')
-    )
-    op.create_table('campaign_step',
-    sa.Column('campaign_step_id', sa.String(length=36), nullable=False),
-    sa.Column('campaign_id', sa.String(length=36), nullable=False),
-    sa.Column('campaign_step_type_id', sa.Integer(), nullable=False),
-    sa.Column('campaign_step_delay', sa.Integer(), nullable=False),
-    sa.Column('campaign_step_body', sa.Text(), nullable=True),
-    sa.Column('campaign_step_subject', sa.String(length=1000), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
-    sa.ForeignKeyConstraint(['campaign_id'], ['campaign.campaign_id'], ),
-    sa.ForeignKeyConstraint(['campaign_step_type_id'], ['campaign_step_type.campaign_step_type_id'], ),
-    sa.PrimaryKeyConstraint('campaign_step_id')
+    sa.ForeignKeyConstraint(['janium_campaign_id'], ['janium_campaign.janium_campaign_id'], ),
+    sa.ForeignKeyConstraint(['janium_campaign_step_type_id'], ['janium_campaign_step_type.janium_campaign_step_type_id'], ),
+    sa.PrimaryKeyConstraint('janium_campaign_step_id')
     )
     op.create_table('ulinc_campaign',
     sa.Column('ulinc_campaign_id', sa.String(length=36), nullable=False),
@@ -286,13 +286,13 @@ def upgrade():
     sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
     sa.ForeignKeyConstraint(['client_id'], ['client.client_id'], ),
-    sa.ForeignKeyConstraint(['janium_campaign_id'], ['campaign.campaign_id'], ),
+    sa.ForeignKeyConstraint(['janium_campaign_id'], ['janium_campaign.janium_campaign_id'], ),
     sa.PrimaryKeyConstraint('ulinc_campaign_id')
     )
     op.create_table('contact',
     sa.Column('contact_id', sa.String(length=36), nullable=False),
     sa.Column('client_id', sa.String(length=36), nullable=False),
-    sa.Column('campaign_id', sa.String(length=36), nullable=False),
+    sa.Column('janium_campaign_id', sa.String(length=36), nullable=False),
     sa.Column('ulinc_campaign_id', sa.String(length=36), nullable=False),
     sa.Column('webhook_response_id', sa.String(length=36), nullable=False),
     sa.Column('ulinc_id', sa.String(length=20), nullable=False),
@@ -314,8 +314,8 @@ def upgrade():
     sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updatedBy', sa.String(length=36), server_default=sa.text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"), nullable=True),
-    sa.ForeignKeyConstraint(['campaign_id'], ['campaign.campaign_id'], ),
     sa.ForeignKeyConstraint(['client_id'], ['client.client_id'], ),
+    sa.ForeignKeyConstraint(['janium_campaign_id'], ['janium_campaign.janium_campaign_id'], ),
     sa.ForeignKeyConstraint(['ulinc_campaign_id'], ['ulinc_campaign.ulinc_campaign_id'], ),
     sa.ForeignKeyConstraint(['webhook_response_id'], ['webhook_response.webhook_response_id'], ),
     sa.PrimaryKeyConstraint('contact_id')
@@ -343,21 +343,21 @@ def downgrade():
     op.drop_table('action')
     op.drop_table('contact')
     op.drop_table('ulinc_campaign')
-    op.drop_table('campaign_step')
-    op.drop_table('ulinc_client_info')
-    op.drop_table('campaign')
+    op.drop_table('janium_campaign_step')
     op.drop_table('webhook_response')
-    op.drop_table('credentials')
-    op.drop_table('cookie')
+    op.drop_table('janium_campaign')
     op.drop_table('client')
     op.drop_table('client_group')
-    op.drop_table('webhook_response_type')
-    op.drop_table('email_server')
+    op.drop_table('ulinc_config')
     op.drop_table('dte_sender')
+    op.drop_table('email_config')
+    op.drop_table('cookie')
+    op.drop_table('webhook_response_type')
+    op.drop_table('janium_campaign_step_type')
+    op.drop_table('email_server')
     op.drop_table('dte')
-    op.drop_table('credentials_type')
+    op.drop_table('credentials')
     op.drop_table('cookie_type')
     op.drop_table('client_group_manager')
-    op.drop_table('campaign_step_type')
     op.drop_table('action_type')
     # ### end Alembic commands ###

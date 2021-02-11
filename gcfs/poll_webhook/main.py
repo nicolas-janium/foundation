@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker
 from urllib3.exceptions import InsecureRequestWarning
 
 import demoji_module as demoji
-from model_db import (Client, Campaign, Ulinc_campaign, Contact, Activity, Webhook_res, Session)
+from db_model import (Client, Campaign, Ulinc_campaign, Contact, Activity, Webhook_response, Webhook_response_type, Session)
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning) # pylint: disable=no-member
 
@@ -32,10 +32,14 @@ base_contact_dict = dict({
 def scrub_name(name):
     return HumanName(demoji.replace(name.replace(',', ''), ''))
 
-def create_new_contact(contact_info, campaignid, clientid, wh_id, wh_type):
+def create_new_contact(contact_info, campaignid, client_id, wh_id, wh_type):
     data = {**base_contact_dict, **contact_info}
-    contactid = str(uuid.uuid4())
     name = scrub_name(data['first_name'] + ' ' + data['last_name'])
+    return Contact(
+        str(uuid.uuid4()),
+        client_id,
+        data['campaign_id']
+    )
     return Contact(
         contactid,
         str(campaignid),

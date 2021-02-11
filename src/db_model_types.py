@@ -64,21 +64,6 @@ action_type_dict = {
     }
 }
 
-credentails_type_dict = {
-    "email_app": {
-        "id": 1,
-        "description": "Credentials for email app username and password in order to send emails and read inboxes"
-    },
-    "sendgrid": {
-        "id": 2,
-        "description": "Sendgrid is a third party email deliverer service"
-    },
-    "ulinc": {
-        "id": 3,
-        "description": "Ulinc login creds"
-    }
-}
-
 webhook_response_type_dict = {
     "ulinc_new_connection": {
         "id": 1,
@@ -99,4 +84,31 @@ cookie_type_dict = {
         "id": 1,
         "description": "Cookie type for Ulinc"
     }
+}
+
+email_server_dict = {
+    "gmail": {
+        "id": "f9cf23f6-231c-4210-90f3-7749873909ad",
+        "smtp_address": "smtp.gmail.com",
+        "smtp_tls_port": 587,
+        "smtp_ssl_port": 465,
+        "imap_address": "imap.gmail.com",
+        "imap_ssl_port": 993
+    },
+    "office_365": {
+        "id": "9e29868d-65dc-4d12-9bfb-9ee38f639773",
+        "smtp_address": "smtp.office365.com",
+        "smtp_tls_port": 587,
+        "smtp_ssl_port": 465,
+        "imap_address": "outlook.office365.com",
+        "imap_ssl_port": 993
+    },
+    "yahoo_small_business": {
+        "id": "5fbb236e-16e6-4a98-94fe-ff11f2b222b3",
+        "smtp_address": "smtp.bizmail.yahoo.com",
+        "smtp_tls_port": 587,
+        "smtp_ssl_port": 465,
+        "imap_address": "imap.mail.yahoo.com",
+        "imap_ssl_port": 993
+    },
 }
