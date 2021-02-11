@@ -392,6 +392,8 @@ class Contact(Base):
 
     # SQLAlchemy Relationships and Backreferences
     actions = relationship('Action', backref=backref('contact', uselist=False), uselist=True, lazy=True)
+    # actions = relationship('Action', backref=backref('contact', uselist=False), lazy='dynamic')
+
 
 
 class Action(Base):

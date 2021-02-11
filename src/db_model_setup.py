@@ -113,8 +113,8 @@ def add_testing_records(session):
     # Client Group Manager
     client_group_manager = Client_group_manager(
         str(uuid4()),
-        'Testy',
-        'Client Group Manager'
+        'Default Client',
+        'Group Manager'
     )
     session.add(client_group_manager)
 
@@ -132,7 +132,8 @@ def add_testing_records(session):
 
     ## Client ##
     client = Client(
-        str(uuid4()),
+        # str(uuid4()),
+        '8a52cdff-6722-4d26-9a6a-55fe952bbef1',
         client_group.client_group_id, 
         ulinc_config.ulinc_config_id,
         email_config.email_config_id,
@@ -144,7 +145,7 @@ def add_testing_records(session):
     session.commit()
 
     ## Campaign ##
-    janium_campaign = Janium_campaign(
+    janium_connector_campaign = Janium_campaign(
         str(uuid4()),
         client.client_id,
         email_config.email_config_id,
@@ -153,19 +154,83 @@ def add_testing_records(session):
         True,
         False
     )
-    ulinc_campaign = Ulinc_campaign(
+    janium_messenger_campaign = Janium_campaign(
         str(uuid4()),
         client.client_id,
-        janium_campaign.janium_campaign_id,
-        'Test Ulinc Connector Campaign Name',
+        email_config.email_config_id,
+        'Test Janium Messenger Campaign Name',
+        'Test Janium Messenger Campaign Description',
         True,
-        '99',
+        True
+    )
+    unnassigned_janium_campaign = Janium_campaign(
+        '9d6c1500-233f-42e2-9e02-725a22c831dc',
+        client.client_id,
+        email_config.email_config_id,
+        'Unassigned Janium Campaign Value',
+        None,
+        False,
+        False
+    )
+    ulinc_connector_campaign1 = Ulinc_campaign(
+        str(uuid4()),
+        client.client_id,
+        janium_connector_campaign.janium_campaign_id,
+        'Test Ulinc Connector Campaign 1 Name',
+        True,
+        '101',
         False,
         None
     )
-    session.add(janium_campaign)
-    session.add(ulinc_campaign)
+    ulinc_connector_campaign2 = Ulinc_campaign(
+        str(uuid4()),
+        client.client_id,
+        janium_connector_campaign.janium_campaign_id,
+        'Test Ulinc Connector Campaign 2 Name',
+        True,
+        '102',
+        False,
+        None
+    )
+    ulinc_connector_campaign3 = Ulinc_campaign(
+        str(uuid4()),
+        client.client_id,
+        janium_messenger_campaign.janium_campaign_id,
+        'Test Ulinc Connector Campaign 3 Name',
+        True,
+        '103',
+        False,
+        None
+    )
+    ulinc_connector_campaign4 = Ulinc_campaign(
+        str(uuid4()),
+        client.client_id,
+        janium_messenger_campaign.janium_campaign_id,
+        'Test Ulinc Connector Campaign 4 Name',
+        True,
+        '104',
+        False,
+        None
+    )
+    unnassigned_ulinc_campaign = Ulinc_campaign(
+        'f98af084-3a30-4036-870d-4ad5859dbc4c',
+        client.client_id,
+        unnassigned_janium_campaign.janium_campaign_id,
+        'Unnassigned Ulinc Campaign Name',
+        True,
+        '999',
+        False,
+        None
+    )
+    session.add(janium_connector_campaign)
+    session.add(janium_messenger_campaign)
+    session.add(unnassigned_janium_campaign)
 
+    session.add(ulinc_connector_campaign1)
+    session.add(ulinc_connector_campaign2)
+    session.add(ulinc_connector_campaign3)
+    session.add(ulinc_connector_campaign4)
+    session.add(unnassigned_ulinc_campaign)
     ## Webhook Response ##
     webhook_response = Webhook_response(
         str(uuid4()),
@@ -185,7 +250,7 @@ def add_testing_records(session):
             step_type = 'li_message'
         campaign_step = Janium_campaign_step(
             str(uuid4()),
-            janium_campaign.janium_campaign_id,
+            janium_connector_campaign.janium_campaign_id,
             campaign_step_type_dict[step_type]['id'],
             True,
             (i + 1) * 3,
@@ -194,38 +259,38 @@ def add_testing_records(session):
         )
         session.add(campaign_step)
 
-        contact = Contact(
-            str(uuid4()),
-            client.client_id,
-            janium_campaign.janium_campaign_id,
-            ulinc_campaign.ulinc_campaign_id,
-            webhook_response.webhook_response_id,
-            '12345678',
-            ulinc_campaign.ulinc_ulinc_campaign_id,
-            'Test{}'.format(i),
-            'Contact{}'.format(i),
-            None, None, None, 'nic@janium.io', None, None, None, None, None
-        )
-        session.add(contact)
+        # contact = Contact(
+        #     str(uuid4()),
+        #     client.client_id,
+        #     janium_campaign.janium_campaign_id,
+        #     ulinc_campaign.ulinc_campaign_id,
+        #     webhook_response.webhook_response_id,
+        #     '12345678',
+        #     ulinc_campaign.ulinc_ulinc_campaign_id,
+        #     'Test{}'.format(i),
+        #     'Contact{}'.format(i),
+        #     None, None, None, 'nic@janium.io', None, None, None, None, None
+        # )
+        # session.add(contact)
 
-        connection_action = Action(
-            str(uuid4()),
-            contact.contact_id,
-            1,
-            None,
-            None
-        )
-        session.add(connection_action)
+        # connection_action = Action(
+        #     str(uuid4()),
+        #     contact.contact_id,
+        #     1,
+        #     None,
+        #     None
+        # )
+        # session.add(connection_action)
 
-        for j in range(1,i):
-            action = Action(
-                str(uuid4()),
-                contact.contact_id,
-                4 if j % 2 == 0 else 3,
-                datetime.now(),
-                'Message Body'
-            )
-            session.add(action)
+        # for j in range(1,i):
+        #     action = Action(
+        #         str(uuid4()),
+        #         contact.contact_id,
+        #         4 if j % 2 == 0 else 3,
+        #         datetime.now(),
+        #         'Message Body'
+        #     )
+        #     session.add(action)
 
     session.commit()
 

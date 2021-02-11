@@ -1,7 +1,9 @@
 import base64
 import json
-import uuid
+from uuid import uuid4
 from datetime import datetime, timedelta
+import os
+import logging
 
 import requests
 from nameparser import HumanName
@@ -10,10 +12,27 @@ from sqlalchemy.orm import sessionmaker
 from urllib3.exceptions import InsecureRequestWarning
 
 import demoji_module as demoji
-from db_model import (Client, Campaign, Ulinc_campaign, Contact, Activity, Webhook_response, Webhook_response_type, Session)
+from db_model import *
+from db_model_types import *
 
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning) # pylint: disable=no-member
 
+if not os.getenv('LOCAL_DEV'):
+    logger = logging.getLogger('send_email')
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    logHandler = logging.StreamHandler()
+    logHandler.setLevel(logging.INFO)
+    logHandler.setFormatter(formatter)
+    logger.addHandler(logHandler)
+else:
+    logger = logging.getLogger('send_email')
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    logHandler = logging.StreamHandler()
+    logHandler.setLevel(logging.DEBUG)
+    logHandler.setFormatter(formatter)
+    logger.addHandler(logHandler)
 
 base_contact_dict = dict({
     'campaign_id': 0,
@@ -32,121 +51,128 @@ base_contact_dict = dict({
 def scrub_name(name):
     return HumanName(demoji.replace(name.replace(',', ''), ''))
 
-def create_new_contact(contact_info, campaignid, client_id, wh_id, wh_type):
+def create_new_contact(contact_info, client_id, campaign_id, existing_ulinc_campaign_id, wh_id):
     data = {**base_contact_dict, **contact_info}
     name = scrub_name(data['first_name'] + ' ' + data['last_name'])
     return Contact(
-        str(uuid.uuid4()),
+        str(uuid4()),
         client_id,
-        data['campaign_id']
-    )
-    return Contact(
-        contactid,
-        str(campaignid),
-        str(clientid),
+        campaign_id,
+        existing_ulinc_campaign_id,
+        wh_id,
         data['id'],
         data['campaign_id'],
-        "internal_ulinc_campaign_id",
         str(name.first).replace(" ", ""),
         str(name.last).replace(" ", ""),
         data['title'],
         data['company'],
         data['location'],
         data['email'],
+        None,
+        None,
         data['phone'],
         data['website'],
-        data['profile'],
-        wh_id
+        data['profile']
     )
 
-def create_new_action(contactid, action_timestamp, action_code, message, open_messageid, is_origin, ulinc_campaign_id):
-    return Action(str(uuid.uuid4()), str(contactid), action_timestamp, action_code, message, open_messageid, is_origin, ulinc_campaign_id)
-
-def save_webhook_res(clientid, res, res_type, session):
-    resid = str(uuid.uuid4())
-    if res_type == 'new_connection':
-        inst = New_connection_wh_res(resid, clientid, res)
-    elif res_type == 'new_message':
-        inst = New_message_wh_res(resid, clientid, res)
-    elif res_type == 'send_message':
-        inst = Send_message_wh_res(resid, clientid, res)
-    session.add(inst)
-    session.commit()
-    return resid
-
-def poll_webhook(wh_url):
+def poll_webhook(wh_url, webhook_type):
     try:
-        return requests.get(wh_url, verify=False).json()
+        if os.getenv('LOCAL_DEV'):
+            f = open('./gcfs/poll_webhook/webhook_sample_data/{}.json'.format(webhook_type), 'r')
+            return json.loads(f.read())
+        else:
+            return requests.get(wh_url, verify=False).json()
     except Exception as err:
         print('Error in polling this webhook url: {} \nError: {}'.format(wh_url, err))
 
-def handle_jdata(client, wh_res_id_dict, session):
-    wh_type = wh_res_id_dict['type']
-    wh_id = wh_res_id_dict['id']
-
-    if wh_type == 'new_connection':
-        wh_res = session.query(New_connection_wh_res).filter(New_connection_wh_res.id == wh_id).first().jdata
-        for item in wh_res:
-            if contact := session.query(Contact).filter(Contact.ulinc_id == str(item['id'])).first(): # if contact exists in the contact table
-                contact_id = contact.id
-                if session.query(Action).filter(Action.contact_id == contact_id).filter(Action.action_code == 1).first(): # if activity exists in the Activity table
-                    pass # activity DOES exist in Activity table
+def handle_webhook_response(client, webhook_response_id, session):
+    webhook_response = session.query(Webhook_response).filter(Webhook_response.webhook_response_id == webhook_response_id).first()
+    for item in webhook_response.webhook_response_value:
+        existing_contact = session.query(Contact).filter(Contact.ulinc_id == str(item['id'])).first() # if contact exists in the contact table
+        existing_ulinc_campaign = session.query(Ulinc_campaign).filter(Ulinc_campaign.client_id == client.client_id).filter(Ulinc_campaign.ulinc_ulinc_campaign_id == str(item['campaign_id'])).first()
+        if webhook_response.webhook_response_type_id == webhook_response_type_dict['ulinc_new_connection']['id']:
+            if existing_contact: # if contact exists in the contact table
+                if len([action for action in existing_contact.actions if action.action_type_id == webhook_response_type_dict['ulinc_new_connection']['id']]) > 0:
+                    pass
                 else:
-                    new_action = create_new_action(contact_id, None, 1, None, None, False, None)
-                    session.add(new_action)
+                    connection_action = Action(str(uuid4()), existing_contact.contact_id, webhook_response_type_dict['ulinc_new_connection']['id'], None, None)
+                    session.add(connection_action)
             else:
-                if query := session.query(Ulinc_campaign).filter(Ulinc_campaign.client_id == client.id).filter(Ulinc_campaign.ulinc_campaign_id == str(item['campaign_id'])).first():
-                    janium_campaign_id = query.janium_campaign_id
+                if existing_ulinc_campaign:
+                    existing_ulinc_campaign_id = existing_ulinc_campaign.ulinc_campaign_id
+                    if existing_ulinc_campaign.parent_janium_campaign:
+                        janium_campaign_id = existing_ulinc_campaign.parent_janium_campaign.janium_campaign_id
+                    else:
+                        janium_campaign_id = '9d6c1500-233f-42e2-9e02-725a22c831dc' # Unassigned janium campaign id value
                 else:
-                    janium_campaign_id = 'a4fc093e-1551-11eb-9daa-42010a8002ff' # Unknown campaign/unassigned
-
-                new_contact = create_new_contact(item, janium_campaign_id, client.id, wh_id, wh_type)
-                contact_id = new_contact.id
+                    existing_ulinc_campaign_id = 'f98af084-3a30-4036-870d-4ad5859dbc4c'
+                    janium_campaign_id = '9d6c1500-233f-42e2-9e02-725a22c831dc' # Unassigned janium campaign id value
+                
+                new_contact = create_new_contact(item, client.client_id, janium_campaign_id, existing_ulinc_campaign_id, webhook_response_id)
+                connection_action = Action(str(uuid4()), new_contact.contact_id, action_type_dict['li_new_connection']['id'], None, None)
                 session.add(new_contact)
-                new_action = create_new_action(contact_id, None, 1, None, None, False, None)
-                session.add(new_action)
-
-    elif wh_type in ('new_message', 'send_message'):
-        if wh_type == 'new_message':
-            wh_res = session.query(New_message_wh_res).filter(New_message_wh_res.id == wh_id).first().jdata
-        else:
-            wh_res = session.query(Send_message_wh_res).filter(Send_message_wh_res.id == wh_id).first().jdata
-        for item in wh_res:
-            # print(client.id, str(item['campaign_id']))
-            ulinc_campaign = session.query(Ulinc_campaign).filter(Ulinc_campaign.client_id == client.id).filter(Ulinc_campaign.ulinc_campaign_id == str(item['campaign_id'])).first()
-            if contact := session.query(Contact).filter(Contact.ulinc_id == str(item['id'])).first(): # if contact exists in the contact table
-                contact_id = contact.id
+                session.add(connection_action)
+        elif webhook_response.webhook_response_type_id == webhook_response_type_dict['ulinc_new_message']['id']:
+            if existing_contact:
+                contact_id = existing_contact.contact_id
             else:
-                new_contact = create_new_contact(item, ulinc_campaign.janium_campaign_id if ulinc_campaign else 'a4fc093e-1551-11eb-9daa-42010a8002ff', client.id, wh_id, wh_type)
-                contact_id = new_contact.id
+                if existing_ulinc_campaign:
+                    new_contact = create_new_contact(item, client.client_id, existing_ulinc_campaign.parent_janium_campaign.janium_campaign_id, existing_ulinc_campaign.ulinc_campaign_id, webhook_response_id)
+                else:
+                    new_contact = create_new_contact(item, client.client_id, '9d6c1500-233f-42e2-9e02-725a22c831dc', 'f98af084-3a30-4036-870d-4ad5859dbc4c', webhook_response_id)
                 session.add(new_contact)
-            is_origin = False
-            if ulinc_campaign and wh_type == 'send_message':
-                if ulinc_campaign.ulinc_is_messenger:
-                    existing_origin_message = session.query(Action).filter(Action.contact_id == contactid)\
-                                                                    .filter(Action.is_ulinc_messenger_origin == 1)\
-                                                                    .filter(Action.ulinc_messenger_campaign_id == str(item['campaign_id']))\
-                                                                    .first()
-                    if existing_origin_message:
-                        pass
+                contact_id = new_contact.contact_id
+            new_message_action = Action(
+                str(uuid4()),
+                contact_id,
+                action_type_dict['li_new_message']['id'],
+                datetime.strptime(item['time'], "%B %d, %Y, %I:%M %p") - timedelta(hours=2),
+                item['message']
+            )
+            session.add(new_message_action)
+        elif webhook_response.webhook_response_type_id == webhook_response_type_dict['ulinc_send_message']['id']:
+            if existing_contact:
+                contact_id = existing_contact.contact_id
+            else:
+                if existing_ulinc_campaign:
+                    new_contact = create_new_contact(item, client.client_id, existing_ulinc_campaign.parent_janium_campaign.janium_campaign_id, existing_ulinc_campaign.ulinc_campaign_id, webhook_response_id)
+                else:
+                    new_contact = create_new_contact(item, client.client_id, '9d6c1500-233f-42e2-9e02-725a22c831dc', 'f98af084-3a30-4036-870d-4ad5859dbc4c', webhook_response_id)
+                session.add(new_contact)
+                contact_id = new_contact.contact_id
+
+            if existing_ulinc_campaign:
+                if existing_ulinc_campaign.parent_janium_campaign.is_messenger:
+                    if existing_origin_message := session.query(Action).filter(Action.contact_id == contact_id).filter(Action.action_id == action_type_dict['ulinc_origin_messenger_message']['id']).first():
+                        is_origin = False
                     else:
                         is_origin = True
+                else:
+                    is_origin = False
+            else:
+                is_origin = False
 
-            # new_activity = create_new_activity(contactid, datetime.strptime(item['time'], "%B %d, %Y, %I:%M %p") - timedelta(hours=2), 2 if wh_type == 'new_message' else 3, item['message'], None, False, None)
-            new_activity = create_new_action(
-                contact_id,
-                datetime.strptime(item['time'], "%B %d, %Y, %I:%M %p") - timedelta(hours=2),
-                2 if wh_type == 'new_message' else 3, item['message'],
-                None,
-                True if is_origin else False,
-                str(item['campaign_id']) if is_origin else None
-            )
+            if is_origin:
+                new_action = Action(
+                    str(uuid4()),
+                    contact_id,
+                    action_type_dict['ulinc_origin_messenger_message']['id'],
+                    datetime.strptime(item['time'], "%B %d, %Y, %I:%M %p") - timedelta(hours=2),
+                    item['message']
+                )
+            else:
+                new_action = Action(
+                    str(uuid4()),
+                    contact_id,
+                    action_type_dict['li_send_message']['id'],
+                    datetime.strptime(item['time'], "%B %d, %Y, %I:%M %p") - timedelta(hours=2),
+                    item['message']
+                )
             session.add(new_action)
-    else:
-        print('Webhook type ({}) not recognized'.format(wh_type))
-        return
+        else:
+            logger.error('Unknown webhook response type')
 
-    session.commit()
+        session.commit()
 
 def main(event, context):
     session = Session()
@@ -154,36 +180,48 @@ def main(event, context):
     pubsub_message = base64.b64decode(event['data']).decode('utf-8')
     payload_json = json.loads(pubsub_message)
 
-    if payload_json['from'].lower() == 'test':
-        active_clients = session.query(Client).filter(Client.id == 'e98f3c45-2f62-11eb-865a-42010a3d0004').all()
+    if payload_json['testing'] == 'true':
+        clients = session.query(Client).filter(Client.client_id == '8a52cdff-6722-4d26-9a6a-55fe952bbef1').all()
     else:
-        active_clients = session.query(Client).filter(Client.is_active == 1).filter(Client.new_connection_wh != None).all()
-
-    polled_clients = []
-    for client in active_clients:
+        clients = session.query(Client).filter(Client.is_active == 1).filter(Client.ulinc_config.new_connection_webhook != None).all()
+    
+    clients_list = []
+    for client in clients:
         webhooks = [
-                {"url": client.new_connection_wh, "type": "new_connection"},
-                {"url": client.new_message_wh, "type": "new_message"},
-                {"url": client.send_message_wh, "type": "send_message"}
-            ]
-        wh_res_id_list = []
-        empty_webhooks = []
-        for wh in webhooks:
-            wh_res = poll_webhook(wh['url'])
-            polled_clients.append('{} {}'.format(client.firstname, client.lastname))
-            if len(wh_res) > 0:
-                wh_res_id = save_webhook_res(client.id, wh_res, wh['type'], session) #  Save the webhook response into the mysql instance
-                wh_res_id_list.append(
-                    {
-                        'type': wh['type'],
-                        'id': wh_res_id
-                    }
-                )
-            else:
-                empty_webhooks.append(wh['type'])
-        print('Empty webhooks for client {} {}: {}'.format(client.firstname, client.lastname, empty_webhooks))
+            {"url": client.ulinc_config.new_connection_webhook, "type": "ulinc_new_connection"},
+            {"url": client.ulinc_config.new_message_webhook, "type": "ulinc_new_message"},
+            {"url": client.ulinc_config.send_message_webhook, "type": "ulinc_send_message"}
+        ]
 
-        if len(wh_res_id_list) > 0:
-            for item_dict in wh_res_id_list:
-                handle_jdata(client, item_dict, session) #  Handle the jdata from the webhook response by parsing and inserting into the contacts and activity tables
-    print('Polled webhooks for {}'.format(sorted(list(set(polled_clients)))))
+        webhook_response_id_list = []
+        empty_webhook_responses = []
+        for webhook in webhooks:
+            webhook_request_response = poll_webhook(webhook['url'], webhook['type'])
+            if len(webhook_request_response) > 0:
+                webhook_response = Webhook_response(str(uuid4()), client.client_id, webhook_request_response, webhook_response_type_dict[webhook['type']]['id'])
+                session.add(webhook_response)
+                webhook_response_id_list.append(webhook_response.webhook_response_id)
+                clients_list.append(client.full_name)
+            else:
+                empty_webhook_responses.append(webhook['type'])
+        session.commit()
+        logger.info('Empty Webhooks for client {}: {}'.format(client.full_name, empty_webhook_responses))
+
+        if len(webhook_response_id_list) > 0:
+            for webhook_response_id in webhook_response_id_list:
+                handle_webhook_response(client, webhook_response_id, session)
+
+
+if __name__ == '__main__':
+    payload = {
+    "testing": "true"
+    }
+    payload = json.dumps(payload)
+
+    payload = base64.b64encode(str(payload).encode("utf-8"))
+
+    event = {
+        "data": payload
+    }
+
+    main(event, 1)
