@@ -2,13 +2,31 @@ import base64
 import json
 from datetime import datetime
 from uuid import uuid4
+import logging
 
 import requests
 from bs4 import BeautifulSoup as Soup
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from db_model import Campaign, Client, Session, Ulinc_campaign, Ulinc_cookie
+from db_model import *
+
+if not os.getenv('LOCAL_DEV'):
+    logger = logging.getLogger('refresh_ulinc_campaigns')
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    logHandler = logging.StreamHandler()
+    logHandler.setLevel(logging.INFO)
+    logHandler.setFormatter(formatter)
+    logger.addHandler(logHandler)
+else:
+    logger = logging.getLogger('refresh_ulinc_campaigns')
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    logHandler = logging.StreamHandler()
+    logHandler.setLevel(logging.DEBUG)
+    logHandler.setFormatter(formatter)
+    logger.addHandler(logHandler)
 
 
 def extract_campaign_id(url):
@@ -33,16 +51,14 @@ def get_messenger_origin_message(ulinc_client_id, campaign_id, usr, pwd):
 
 def get_ulinc_campaigns(client, ulinc_cookie):
     req_session = requests.Session()
-    get_connector_campaigns_url = 'https://ulinc.co/{}/?do=campaigns&act=campaigns'.format(client.ulinc_id)
-    get_messenger_campaigns_url = 'https://ulinc.co/{}/?do=campaigns&act=bulk_campaigns'.format(client.ulinc_id)
+    get_connector_campaigns_url = 'https://ulinc.co/{}/?do=campaigns&act=campaigns'.format(client.ulinc_config.client_ulinc_id)
+    get_messenger_campaigns_url = 'https://ulinc.co/{}/?do=campaigns&act=bulk_campaigns'.format(client.ulinc_config.client_ulinc_id)
 
-    if datetime.now() > ulinc_cookie.expires:
-        print("Ulinc cookie for client {} is expired. Refreshing cookie...".format(client.id))
-        return
-    else:
-        jar = requests.cookies.RequestsCookieJar()
-        jar.set('usr', ulinc_cookie.usr)
-        jar.set('pwd', ulinc_cookie.pwd)
+    usr = ulinc_cookie.cookie_json_value['usr']
+    pwd = ulinc_cookie.cookie_json_value['pwd']
+    jar = requests.cookies.RequestsCookieJar()
+    jar.set('usr', usr)
+    jar.set('pwd', pwd)
 
     campaigns = {
         "connector": [],
@@ -69,12 +85,10 @@ def get_ulinc_campaigns(client, ulinc_cookie):
         for tr in m_table_body.find_all('tr'):
             td_list = tr.find_all('td')
             ulinc_campaign_id = str(extract_campaign_id(td_list[0].find('a')['href']))
-            origin_message = get_messenger_origin_message(client.ulinc_id, ulinc_campaign_id, ulinc_cookie.usr, ulinc_cookie.pwd)
             camp_dict = {
                 "name": td_list[0].text,
                 "ulinc_campaign_id": ulinc_campaign_id,
-                "is_active": True if td_list[1].find('span').text == 'Active' else False,
-                "origin_message": origin_message
+                "is_active": True if td_list[1].find('span').text == 'Active' else False
             }
             campaigns['messenger'].append(camp_dict)
 
@@ -82,27 +96,39 @@ def get_ulinc_campaigns(client, ulinc_cookie):
 
 def insert_campaigns(ulinc_campaign_dict, client_id, session):
     for ulinc_campaign in ulinc_campaign_dict['connector']:
-        existing_ulinc_campaign = session.query(Ulinc_campaign).filter(Ulinc_campaign.client_id == client_id).filter(Ulinc_campaign.ulinc_campaign_id == ulinc_campaign['ulinc_campaign_id']).first()
+        existing_ulinc_campaign = session.query(Ulinc_campaign).filter(Ulinc_campaign.client_id == client_id).filter(Ulinc_campaign.ulinc_ulinc_campaign_id == ulinc_campaign['ulinc_campaign_id']).first()
         if existing_ulinc_campaign:
-            existing_ulinc_campaign.name = ulinc_campaign['name']
-            if existing_ulinc_campaign.ulinc_is_active != ulinc_campaign['is_active']:
-                existing_ulinc_campaign.ulinc_is_active = ulinc_campaign['is_active']
-                print("Ulinc Campaign {} for client {} is now {}".format(ulinc_campaign['name'], client_id, 'active' if ulinc_campaign['is_active'] else 'inactive'))
+            existing_ulinc_campaign.ulinc_campaign_name = ulinc_campaign['name']
+            existing_ulinc_campaign.ulinc_is_active = ulinc_campaign['is_active']
         else:
-            new_Ulinc_campaign = Ulinc_campaign(str(uuid4()), client_id, ulinc_campaign['name'], ulinc_campaign['is_active'], ulinc_campaign['ulinc_campaign_id'], False, None)
+            new_Ulinc_campaign = Ulinc_campaign(
+                str(uuid4()),
+                client_id,
+                '9d6c1500-233f-42e2-9e02-725a22c831dc',
+                ulinc_campaign['name'],
+                ulinc_campaign['is_active'],
+                ulinc_campaign['ulinc_campaign_id'],
+                False,
+                None
+            )
             session.add(new_Ulinc_campaign)
 
     for ulinc_campaign in ulinc_campaign_dict['messenger']:
-        existing_ulinc_campaign = session.query(Ulinc_campaign).filter(Ulinc_campaign.client_id == client_id).filter(Ulinc_campaign.ulinc_campaign_id == ulinc_campaign['ulinc_campaign_id']).first()
+        existing_ulinc_campaign = session.query(Ulinc_campaign).filter(Ulinc_campaign.client_id == client_id).filter(Ulinc_campaign.ulinc_ulinc_campaign_id == ulinc_campaign['ulinc_campaign_id']).first()
         if existing_ulinc_campaign:
-            existing_ulinc_campaign.name = ulinc_campaign['name']
-            if existing_ulinc_campaign.ulinc_is_active != ulinc_campaign['is_active']:
-                existing_ulinc_campaign.ulinc_is_active = ulinc_campaign['is_active']
-                print("Ulinc Campaign {} for client {} is now {}".format(ulinc_campaign['name'], client_id, 'active' if ulinc_campaign['is_active'] else 'inactive'))
-
-            existing_ulinc_campaign.ulinc_messenger_origin_message = ulinc_campaign['origin_message']
+            existing_ulinc_campaign.ulinc_campaign_name = ulinc_campaign['name']
+            existing_ulinc_campaign.ulinc_is_active = ulinc_campaign['is_active']
         else:
-            new_Ulinc_campaign = Ulinc_campaign(str(uuid4()), client_id, ulinc_campaign['name'], ulinc_campaign['is_active'], ulinc_campaign['ulinc_campaign_id'], True, ulinc_campaign['origin_message'])
+            new_Ulinc_campaign = Ulinc_campaign(
+                str(uuid4()),
+                client_id,
+                '9d6c1500-233f-42e2-9e02-725a22c831dc',
+                ulinc_campaign['name'],
+                ulinc_campaign['is_active'],
+                ulinc_campaign['ulinc_campaign_id'],
+                True,
+                None
+            )
             session.add(new_Ulinc_campaign)
 
     session.commit()
@@ -113,21 +139,24 @@ def main(event, context):
     pubsub_message = base64.b64decode(event['data']).decode('utf-8')
     payload_json = json.loads(pubsub_message)
 
-    active_clients = session.query(Client).filter(Client.is_active == 1).all() # pylint: disable=no-member
-    for client in active_clients:
-        if client.ulinc_cookie:
-            ulinc_campaign_dict = get_ulinc_campaigns(client, client.ulinc_cookie)
+    if payload_json['testing'] == 'true':
+        clients = session.query(Client).filter(Client.client_id == '8a52cdff-6722-4d26-9a6a-55fe952bbef1').all()
+    else:
+        clients = session.query(Client).filter(Client.is_active == 1).filter(Client.ulinc_config != None).all()
+
+    for client in clients:
+        if client.ulinc_config.cookie:
+            ulinc_campaign_dict = get_ulinc_campaigns(client, client.ulinc_config.cookie)
+            logger.debug(ulinc_campaign_dict)
             if ulinc_campaign_dict:
-                insert_campaigns(ulinc_campaign_dict, client.id, session)
+                insert_campaigns(ulinc_campaign_dict, client.client_id, session)
             else:
-                print('Campaign dict empty. Error or no campaigns')
+                logger.info('Campaign dict empty. Error or no campaigns')
         else:
-            print('Client ulinc cookie does not exist for {}'.format(client.firstname + ' ' + client.lastname))
+            logger.info('Client ulinc cookie does not exist for {}'.format(client.full_name))
     
 if __name__ == '__main__':
     payload = {
-    "trigger-type": "function",
-    "from": "test",
     "testing": "true"
     }
     payload = json.dumps(payload)
