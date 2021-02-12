@@ -749,7 +749,7 @@ class Cookie_type(Base):
     # Primary Keys
     cookie_type_id = Column(Integer, primary_key=True)
 
-    # Foreign Keys
+    # Foreign Keys 
 
     # Common Columns
     cookie_type = Column(String(64), nullable=False)

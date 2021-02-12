@@ -32,22 +32,22 @@ else:
 def extract_campaign_id(url):
     return url.split('/')[-2]
 
-def get_messenger_origin_message(ulinc_client_id, campaign_id, usr, pwd):
-    url = 'https://ulinc.co/{}/campaigns/{}/'.format(ulinc_client_id, campaign_id)
+# def get_messenger_origin_message(ulinc_client_id, campaign_id, usr, pwd):
+#     url = 'https://ulinc.co/{}/campaigns/{}/'.format(ulinc_client_id, campaign_id)
 
-    jar = requests.cookies.RequestsCookieJar()
-    jar.set('usr', usr)
-    jar.set('pwd', pwd)
+#     jar = requests.cookies.RequestsCookieJar()
+#     jar.set('usr', usr)
+#     jar.set('pwd', pwd)
 
-    headers = {
-        "Accept": "application/json"
-    }
+#     headers = {
+#         "Accept": "application/json"
+#     }
 
-    res = requests.get(url=url, cookies=jar, headers=headers)
-    if res.ok:
-        soup = Soup(res.text, 'html.parser')
-        origin_message = soup.find('textarea', {"name": "message[welcome]"})
-        return origin_message.get_text()
+#     res = requests.get(url=url, cookies=jar, headers=headers)
+#     if res.ok:
+#         soup = Soup(res.text, 'html.parser')
+#         origin_message = soup.find('textarea', {"name": "message[welcome]"})
+#         return origin_message.get_text()
 
 def get_ulinc_campaigns(client, ulinc_cookie):
     req_session = requests.Session()
@@ -145,7 +145,7 @@ def main(event, context):
         clients = session.query(Client).filter(Client.is_active == 1).filter(Client.ulinc_config != None).all()
 
     for client in clients:
-        if client.ulinc_config.cookie:
+        if client.ulinc_config.cookie_id != Cookie.dummy_cookie_id:
             ulinc_campaign_dict = get_ulinc_campaigns(client, client.ulinc_config.cookie)
             logger.debug(ulinc_campaign_dict)
             if ulinc_campaign_dict:
