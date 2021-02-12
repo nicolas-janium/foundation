@@ -1,11 +1,11 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import uuid4()
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from db_model import Action, Session
+from db_model import *
 
 
 def main(request):
@@ -24,7 +24,7 @@ def main(request):
     else:
         session = Session()
 
-        new_action = Action(str(uuid4()), args['contactid'], datetime.now(), 7, None, None, False, None)
+        new_action = Action(str(uuid4()), args['contactid'], 7, datetime.now() - timedelta(hours=7), None)
         session.add(new_action) # pylint: disable=no-member
         session.commit() # pylint: disable=no-member
 
