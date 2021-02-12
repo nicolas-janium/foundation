@@ -65,12 +65,20 @@ def add_testing_records(session):
         str(uuid4()),
         1,
         {
-            "usr": "48527",
-            "pwd": "93fd3060131f8f9e8410775809f0a231",
+            "usr": "",
+            "pwd": "",
             "expires": "2021-12-05 08:00:21"
         }
     )
+    dummy_cookie = Cookie(
+        Cookie.dummy_cookie_id,
+        1,
+        {
+            "some": "data"
+        }
+    )
     session.add(ulinc_cookie)
+    session.add(dummy_cookie)
 
     ## Ulinc Config ##
     ulinc_config = Ulinc_config(

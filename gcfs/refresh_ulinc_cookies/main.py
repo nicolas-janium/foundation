@@ -2,13 +2,30 @@ import base64
 import json
 from datetime import datetime
 from uuid import uuid4
+import logging
 
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from db_model import Client, Session, Ulinc_cookie
+from db_model import *
 
+if not os.getenv('LOCAL_DEV'):
+    logger = logging.getLogger('refresh_ulinc_cookie')
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    logHandler = logging.StreamHandler()
+    logHandler.setLevel(logging.INFO)
+    logHandler.setFormatter(formatter)
+    logger.addHandler(logHandler)
+else:
+    logger = logging.getLogger('refresh_ulinc_cookie')
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    logHandler = logging.StreamHandler()
+    logHandler.setLevel(logging.DEBUG)
+    logHandler.setFormatter(formatter)
+    logger.addHandler(logHandler)
 
 def get_cookie(ulinc_clientid, username, password):
     login_url = 'https://ulinc.co/login/?email={}&password={}&sign=1'.format(username, password)
@@ -33,24 +50,26 @@ def main(event, context):
     pubsub_message = base64.b64decode(event['data']).decode('utf-8')
     payload_json = json.loads(pubsub_message)
 
-    clients = session.query(Client).filter(Client.is_active == 1).filter(Client.ulinc_username != None).filter(Client.ulinc_password != None).all()
+    if payload_json['testing'] == 'true':
+        clients = session.query(Client).filter(Client.client_id == '8a52cdff-6722-4d26-9a6a-55fe952bbef1').all()
+    else:
+        clients = session.query(Client).filter(Client.is_active == 1).filter(Client.ulinc_config != None).all()
 
     for client in clients:
-        ulinc_cookie = get_cookie(client.ulinc_id, client.ulinc_username, client.ulinc_password)
-        if client.ulinc_cookie:
-            client.ulinc_cookie.usr = ulinc_cookie['usr']
-            client.ulinc_cookie.pwd = ulinc_cookie['pwd']
-            client.ulinc_cookie.expires = ulinc_cookie['expires']
+        logger.debug(client.ulinc_config.credentials.username + ' ' + client.ulinc_config.credentials.password)
+        ulinc_cookie = get_cookie(client.ulinc_config.client_ulinc_id, client.ulinc_config.credentials.username, client.ulinc_config.credentials.password)
+        logger.debug(ulinc_cookie)
+        if client.ulinc_config.cookie_id == Cookie.dummy_cookie_id:
+            new_cookie = Cookie(str(uuid4()), 1, ulinc_cookie)
+            session.add(new_cookie)
         else:
-            new_ulinc_cookie = Ulinc_cookie(str(uuid4()), client.id, ulinc_cookie['usr'], ulinc_cookie['pwd'], ulinc_cookie['expires'])
-            session.add(new_ulinc_cookie)
+            client.ulinc_config.cookie.cookie_json_value = ulinc_cookie
         session.commit()
 
 
 if __name__ == '__main__':
     payload = {
-        "from": "retool",
-        "lpass_ulinc": "3930558453453060520"
+        "testing": "true"
     }
     payload = json.dumps(payload)
     payload = base64.b64encode(str(payload).encode("utf-8"))
