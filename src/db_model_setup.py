@@ -3,7 +3,7 @@ from db_model_types import *
 import json
 from uuid import uuid4
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def insert_types(session):
     # Insert Janium_campaign Step Types
@@ -261,7 +261,7 @@ def add_testing_records(session):
             janium_connector_campaign.janium_campaign_id,
             campaign_step_type_dict[step_type]['id'],
             True,
-            (i + 1) * 3,
+            i * 3,
             'Janium Campaign Step {} {} Body'.format(i, step_type),
             'Janium Campaign Step {} {} Subject'.format(i, step_type) if i % 2 == 0 else None,
         )
@@ -285,7 +285,7 @@ def add_testing_records(session):
             str(uuid4()),
             contact.contact_id,
             1,
-            None,
+            datetime.utcnow() - timedelta(hours=7),
             None
         )
         session.add(connection_action)

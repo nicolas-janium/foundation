@@ -116,8 +116,8 @@ class Client(Base):
     updatedBy = Column(String(36), server_default=text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"))
 
     # SQLAlchemy Relationships and Backreferences
-    campaigns = relationship('Janium_campaign', backref=backref('janium_campaign_client', uselist=False), uselist=True, lazy=True)
-    ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('ulinc_campaign_client', uselist=False), uselist=True, lazy=True)
+    campaigns = relationship('Janium_campaign', backref=backref('janium_campaign_client', uselist=False), uselist=True, lazy='dynamic')
+    ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('ulinc_campaign_client', uselist=False), uselist=True, lazy='dynamic')
     contacts = relationship('Contact', backref=backref('contact_client', uselist=False), uselist=True, lazy=False)
     email_config = relationship('Email_config', uselist=False, lazy=True)
     ulinc_config = relationship('Ulinc_config', uselist=False, lazy=True)
@@ -224,9 +224,9 @@ class Janium_campaign(Base):
     updatedBy = Column(String(36), server_default=text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"))
 
     # SQLAlchemy Relationships and Backreferences
-    contacts = relationship('Contact', backref=backref('contact_janium_campaign', uselist=False), uselist=True, lazy=False)
+    contacts = relationship('Contact', backref=backref('contact_janium_campaign', uselist=False), uselist=True, lazy='dynamic')
     ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('parent_janium_campaign', uselist=False), uselist=True, lazy=True)
-    janium_campaign_steps = relationship('Janium_campaign_step', backref=backref('parent_janium_campaign', uselist=False), uselist=True, lazy=True)
+    janium_campaign_steps = relationship('Janium_campaign_step', backref=backref('parent_janium_campaign', uselist=False), uselist=True, lazy='dynamic')
 
 class Janium_campaign_step(Base):
     __tablename__ = 'janium_campaign_step'
@@ -391,7 +391,7 @@ class Contact(Base):
     updatedBy = Column(String(36), server_default=text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"))
 
     # SQLAlchemy Relationships and Backreferences
-    actions = relationship('Action', backref=backref('contact', uselist=False), uselist=True, lazy=True)
+    actions = relationship('Action', backref=backref('contact', uselist=False), uselist=True, lazy='dynamic')
 
 
 class Action(Base):

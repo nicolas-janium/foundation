@@ -16,7 +16,7 @@ campaign_step_type_dict = {
 action_type_dict = {
     "li_new_connection": {
         "id": 1,
-        "description": "The contact onnection request accepted. Originates in Ulinc"
+        "description": "The contact connection request accepted. Originates in Ulinc"
     },
     "li_new_message": {
         "id": 2,
@@ -65,6 +65,14 @@ action_type_dict = {
     "ulinc_origin_messenger_message": {
         "id": 13,
         "description": "This is the origin message for Ulinc Messenger Campaigns"
+    },
+    "li_new_connection_backdated": {
+        "id": 14,
+        "description": "The contact connection request accepted if contact is backdated into a janium campaign"
+    },
+    "email_bounce": {
+        "id": 15,
+        "description": "The contact was sent an email that bounced. Originates from Sendgrid"
     }
 }
 
@@ -114,5 +122,5 @@ email_server_dict = {
         "smtp_ssl_port": 465,
         "imap_address": "imap.mail.yahoo.com",
         "imap_ssl_port": 993
-    },
+    }
 }

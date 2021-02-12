@@ -109,7 +109,7 @@ def handle_webhook_response(client, webhook_response_id, session):
                     janium_campaign_id = '9d6c1500-233f-42e2-9e02-725a22c831dc' # Unassigned janium campaign id value
                 
                 new_contact = create_new_contact(item, client.client_id, janium_campaign_id, existing_ulinc_campaign_id, webhook_response_id)
-                connection_action = Action(str(uuid4()), new_contact.contact_id, action_type_dict['li_new_connection']['id'], None, None)
+                connection_action = Action(str(uuid4()), new_contact.contact_id, action_type_dict['li_new_connection']['id'], datetime.utcnow() - timedelta(hours=7), None)
                 session.add(new_contact)
                 session.add(connection_action)
         elif webhook_response.webhook_response_type_id == webhook_response_type_dict['ulinc_new_message']['id']:
