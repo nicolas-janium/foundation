@@ -267,38 +267,38 @@ def add_testing_records(session):
         )
         session.add(campaign_step)
 
-        # contact = Contact(
-        #     str(uuid4()),
-        #     client.client_id,
-        #     janium_campaign.janium_campaign_id,
-        #     ulinc_campaign.ulinc_campaign_id,
-        #     webhook_response.webhook_response_id,
-        #     '12345678',
-        #     ulinc_campaign.ulinc_ulinc_campaign_id,
-        #     'Test{}'.format(i),
-        #     'Contact{}'.format(i),
-        #     None, None, None, 'nic@janium.io', None, None, None, None, None
-        # )
-        # session.add(contact)
+        contact = Contact(
+            str(uuid4()),
+            client.client_id,
+            janium_connector_campaign.janium_campaign_id,
+            ulinc_connector_campaign1.ulinc_campaign_id,
+            webhook_response.webhook_response_id,
+            '56761861868',
+            ulinc_connector_campaign1.ulinc_ulinc_campaign_id,
+            'Test{}'.format(i),
+            'Contact{}'.format(i),
+            None, None, None, 'nic@janium.io', None, None, None, None, None
+        )
+        session.add(contact)
 
-        # connection_action = Action(
-        #     str(uuid4()),
-        #     contact.contact_id,
-        #     1,
-        #     None,
-        #     None
-        # )
-        # session.add(connection_action)
+        connection_action = Action(
+            str(uuid4()),
+            contact.contact_id,
+            1,
+            None,
+            None
+        )
+        session.add(connection_action)
 
-        # for j in range(1,i):
-        #     action = Action(
-        #         str(uuid4()),
-        #         contact.contact_id,
-        #         4 if j % 2 == 0 else 3,
-        #         datetime.now(),
-        #         'Message Body'
-        #     )
-        #     session.add(action)
+        for j in range(1,i):
+            action = Action(
+                str(uuid4()),
+                contact.contact_id,
+                4 if j % 2 == 0 else 3,
+                datetime.now(),
+                'Message Body'
+            )
+            session.add(action)
 
     session.commit()
 
