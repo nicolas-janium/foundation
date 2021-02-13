@@ -1,3 +1,3 @@
 steps:
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  args: ['functions', 'deploy', 'function-1', '--trigger-http', '--runtime', 'python38']
+  args: ['functions', 'deploy', 'function-1', '--trigger-http', '--runtime', 'python38', '--source', './gcfs/hello_world/']
