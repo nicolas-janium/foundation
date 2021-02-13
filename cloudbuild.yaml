@@ -1,0 +1,9 @@
+steps:
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  args:
+  - functions
+  - deploy
+  - function-1
+  - --region=us-central1
+  - --source=./gcfs/helloworld/
+  - --trigger-http
