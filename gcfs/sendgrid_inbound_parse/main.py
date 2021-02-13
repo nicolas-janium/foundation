@@ -1,12 +1,10 @@
 import email
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import uuid4
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from db_model import *
 
-from db_model import Client, Action, Contact, Session
-
+mtn_time = datetime.utcnow() - timedelta(hours=7)
 
 def main(request):
     session = Session()
@@ -31,15 +29,14 @@ def main(request):
 
     if from_addr == 'forwarding-noreply@google.com':
         print(body)
-    
-    client = session.query(Client).filter(Contact.email == to_addr).first()
-    if client:
-        contacts = client.contacts
-        for contact in contacts:
-            if contact.email == from_addr:
-                new_action = Action(str(uuid4()), contact.id, datetime.now(), 6, None, None, False, None)
-                session.add(new_action)
-                session.commit()
+
+    for credentials in session.query(Credentials).filter(Credentials.username == to_addr).all():
+        if client := credentials.email_config.email_config_client:
+            for contact in client.contacts:
+                if from_addr in contact.emails:
+                    new_action = Action(str(uuid4()), contact.contact_id, 6, mtn_time, body)
+                    session.add(new_action)
+                    session.commit()
 
     return '1'
 
@@ -47,8 +44,6 @@ if __name__ == '__main__':
     pass
     # session = Session()
 
-    # client = session.query(Client).first()
-
-    # contacts = client.contacts.filter(Contact.firstname == 'Sarah').all()
-    # for contact in contacts:
-    #     print(contact.lastname)
+    # if email_config := session.query(Credentials).filter(Credentials.username == 'jason@thecxo100.com').first().email_config:
+    #     client = email_config.email_config_client
+    #     print(client.full_name)

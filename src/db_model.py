@@ -119,7 +119,7 @@ class Client(Base):
     campaigns = relationship('Janium_campaign', backref=backref('janium_campaign_client', uselist=False), uselist=True, lazy='dynamic')
     ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('ulinc_campaign_client', uselist=False), uselist=True, lazy='dynamic')
     contacts = relationship('Contact', backref=backref('contact_client', uselist=False), uselist=True, lazy=False)
-    email_config = relationship('Email_config', uselist=False, lazy=True)
+    email_config = relationship('Email_config', backref=backref('email_config_client', uselist=False), uselist=False, lazy=True)
     ulinc_config = relationship('Ulinc_config', uselist=False, lazy=True)
 
 class Client_group(Base):
@@ -393,6 +393,9 @@ class Contact(Base):
     # SQLAlchemy Relationships and Backreferences
     actions = relationship('Action', backref=backref('contact', uselist=False), uselist=True, lazy='dynamic')
 
+    def emails(self):
+        return [self.email1, self.email2, self.email3]
+
 
 class Action(Base):
     __tablename__ = 'action'
@@ -604,7 +607,7 @@ class Email_config(Base):
     updatedBy = Column(String(36), server_default=text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"))
 
     # SQLAlchemy Relationships and Backreferences
-    credentials = relationship('Credentials', uselist=False)
+    credentials = relationship('Credentials', backref=backref('email_config', uselist=False), uselist=False)
     email_server = relationship('Email_server', uselist=False)
 
 class Email_server(Base):
@@ -677,7 +680,7 @@ class Ulinc_config(Base):
     updatedBy = Column(String(36), server_default=text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"))
 
     # SQLAlchemy Relationships and Backreferences
-    credentials = relationship('Credentials', uselist=False)
+    credentials = relationship('Credentials', backref=backref('ulinc_config', uselist=False), uselist=False)
     cookie = relationship('Cookie', uselist=False)
 
 
