@@ -13,4 +13,4 @@ def main(request):
     elif request_json and 'message' in request_json:
         return request_json['message']
     else:
-        return f'Hello World! I just made a commit on the main branch!!! This is so cool.'
+        return f'Hello World! I just made a commit on the main branch!!! This is so cool. Another merge from dev-staging-main'
