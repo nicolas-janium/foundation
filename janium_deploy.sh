@@ -3,5 +3,7 @@ declare -a deploy_files=( $(git diff --name-only HEAD HEAD~1 | sed 's/main.py/de
 
 for i in "${deploy_files[@]}"
 do
-    $i
+    if [[ 'deploy.sh' == *"$i"* ]]; then
+        $i
+    fi
 done
