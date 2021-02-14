@@ -1,7 +1,8 @@
 steps:
-- name: 'gcr.io/cloud-builders/gcloud'
-  entrypoint: 'bash'
-  args: ['./janium_deploy.sh']
-steps:
+# - name: 'gcr.io/cloud-builders/gcloud'
+#   entrypoint: 'bash'
+#   args: ['./janium_deploy.sh']
+- name: 'gcr.io/cloud-builders/git'
+  args: ['fetch', 'unshallow']
 - name: 'gcr.io/cloud-builders/git'
   args: ['log']
