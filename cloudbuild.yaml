@@ -1,4 +1,4 @@
 steps:
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:latest'
   entrypoint: 'bash'
-  args: ['./deploy_hello_world.sh']
+  args: ['./janium_deploy.sh']
