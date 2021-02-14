@@ -1,4 +1,7 @@
 steps:
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:latest'
+- name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: 'bash'
   args: ['./janium_deploy.sh']
+steps:
+- name: 'gcr.io/cloud-builders/git'
+  args: ['log']
