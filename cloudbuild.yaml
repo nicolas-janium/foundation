@@ -2,7 +2,11 @@ steps:
 - name: 'gcr.io/cloud-builders/git'
   args: ['fetch', '--unshallow']
 - name: 'gcr.io/cloud-builders/git'
-  args: ['branch']
+  entrypoint: 'bash'
+  args: ['ls', '-la']
+# - name: 'gcr.io/cloud-builders/git'
+#   args: ['branch']
+
 
 # - name: 'gcr.io/cloud-builders/gcloud'
 #   entrypoint: 'bash'
