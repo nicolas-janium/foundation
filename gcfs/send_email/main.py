@@ -293,8 +293,8 @@ def main(event, context):
 
 if __name__ == '__main__':
     payload = {
-    "testing": "true",
-    "mail-tester": "false"
+        "testing": "true",
+        "mail-tester": "false"
     }
     payload = json.dumps(payload)
     payload = base64.b64encode(str(payload).encode("utf-8"))
