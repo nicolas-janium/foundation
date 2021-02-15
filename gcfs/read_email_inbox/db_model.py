@@ -393,7 +393,7 @@ class Contact(Base):
     # SQLAlchemy Relationships and Backreferences
     actions = relationship('Action', backref=backref('contact', uselist=False), uselist=True, lazy='dynamic')
 
-    def emails(self):
+    def get_emails(self):
         return [self.email1, self.email2, self.email3]
 
 

@@ -1,8 +1,14 @@
 import base64
 import email
 import json
+import quopri
+import re
 import ssl
 from datetime import datetime, timedelta
+from email import policy
+from email.message import EmailMessage
+from uuid import uuid4
+import logging
 
 import google.auth
 import requests
@@ -10,6 +16,23 @@ from google.cloud import secretmanager
 from imapclient import IMAPClient
 
 from db_model import *
+
+if os.getenv('IS_CLOUD') == 'True':
+    logger = logging.getLogger('read_inbox')
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    logHandler = logging.StreamHandler()
+    logHandler.setLevel(logging.INFO)
+    logHandler.setFormatter(formatter)
+    logger.addHandler(logHandler)
+else:
+    logger = logging.getLogger('read_inbox')
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    logHandler = logging.StreamHandler()
+    logHandler.setLevel(logging.DEBUG)
+    logHandler.setFormatter(formatter)
+    logger.addHandler(logHandler)
 
 mtn_time = datetime.utcnow() - timedelta(hours=7)
 
@@ -21,14 +44,14 @@ def get_inbox(username, password, imap_address, port):
         client.login(username, password)
         client.select_folder('INBOX', readonly=True)
 
-        since = mtn_time - timedelta(days=100)
+        since = mtn_time - timedelta(days=1) # Run this function daily
         since_date = since.date()
 
         search_response = client.search([u'SINCE', since_date])
         inbox = client.fetch(search_response, b'RFC822')
         return_list =[]
         for id, data in inbox.items():
-            return_list.append(email.message_from_bytes(data[b'RFC822']))
+            return_list.append(email.message_from_bytes(data[b'RFC822'], policy=policy.default))
     return return_list
 
 def main(event, context):
@@ -47,55 +70,28 @@ def main(event, context):
     for client in clients:
         email_server = client.email_config.email_server
         inbox = get_inbox(client.email_config.credentials.username, client.email_config.credentials.password, email_server.imap_address, email_server.imap_ssl_port)
-        # print(inbox)
 
         contacts = [
             contact for contact in client.contacts.order_by(Contact.full_name) if contact.actions.filter(Action.action_type_id.in_([4])).first()
         ]
 
+        contacts_list = []
         for contact in contacts:
             for message in inbox:
-                pass
-                # if message['FROM'] in contact.emails:
-                    # new_action = Action(str(uuid4()), contact.contact_id, 6, mtn_time, message[])
-
-        for message in inbox:
-            print(message._headers)
-
-
-
-
-
-
-        # active_campaigns = session.query(Campaign).filter(Campaign.clientid == client.id)\
-        #                                             .filter(Campaign.isactive == 1)\
-        #                                             .all()
-
-        # for campaign in active_campaigns:
-        #     campaign_email_server = session.query(Email_server).filter(Email_server.id == campaign.email_server_id).first()
-        #     if campaign_email_server:
-        #         inbox = get_inbox(campaign.email_app_username, campaign.email_app_password, campaign_email_server.imap_address, campaign_email_server.imap_ssl_port)
-        #     # else:
-        #     #     inbox = get_inbox(client.email_app_username, client.email_app_password, email_server.imap_address, email_server.imap_ssl_port, client.dateadded)
-        #     with db_engine.connect() as conn:
-        #         email_sends = conn.execute("call fetch_email_sends('{}')".format(campaign.id))
-        #         email_sends = list(email_sends)
-
-        #     for email_send in email_sends:
-        #         bounce = has_bounced(email_send[1], bounces)
-        #         if bounce:
-        #             print("Email to {} bounced for client {} {}.".format(email_send[0], client.firstname, client.lastname))
-        #             new_activity = Activity(email_send[0], datetime.fromtimestamp(bounce['created']), 10, None, email_send[2], False, None)
-        #             session.add(new_activity)
-        #             session.commit()
-        #             continue
-        #         for item in inbox:
-        #             if email_send[1] in item['FROM']:
-        #                 new_response = item
-        #                 print("Email response from {} for client {} {}".format(email_send[1], client.firstname, client.lastname))
-        #                 new_activity = Activity(email_send[0], new_response['received_datetime'], 6, None, new_response['janium_message_id'], False, None)
-        #                 session.add(new_activity)
-        #                 session.commit()
+                from_addr = re.findall("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)", message['FROM'])[0]
+                body = message.get_body()
+                body = str(body.get_payload())
+                body = str(quopri.decodestring(body))
+                if from_addr in contact.get_emails():
+                    existing_action = contact.actions.filter(Action.contact_id == contact.contact_id).filter(Action.action_type_id == 6).first()
+                    logger.debug(existing_action)
+                    if not existing_action:
+                        new_action = Action(str(uuid4()), contact.contact_id, 6, mtn_time, body)
+                        session.add(new_action)
+                        session.commit()
+                        contacts_list.append(contact.full_name)
+        if len(contacts_list) > 0:
+            logger.info("Client {} had new responses from these contacts: {}".format(client.full_name, contacts_list))
 
 if __name__ == '__main__':
     payload = {
@@ -107,5 +103,3 @@ if __name__ == '__main__':
         "data": payload
     }
     main(event, 1)
-
-    # print(len(get_inbox('nic@janium.io', 'nagxjkybavuiviyw', 'imap.gmail.com', 993)))
