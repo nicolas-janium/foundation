@@ -1,5 +1,6 @@
 #!/bin/sh
-ls -la
+# ls -la
+git diff --name-only master master~1
 # declare -a deploy_files=( $(git diff --name-only main main~1 | sed 's/main.py/deploy.sh/g') )
 
 # for i in "${deploy_files[@]}"
