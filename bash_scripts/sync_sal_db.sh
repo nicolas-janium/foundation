@@ -1,1 +1,0 @@
-find /home/nicolas/projects/janium/python/ -name sal_db.py -exec rsync /home/nicolas/projects/janium/python/sandbox/sal_db_test.py {} \;

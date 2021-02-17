@@ -1,5 +1,0 @@
-{
-    "trigger-type": "function",
-    "from": "janium-send-email-schedule",
-    "testing": "true"
-}

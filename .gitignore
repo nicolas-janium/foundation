@@ -1,3 +1,8 @@
 .vscode
 deploy_logs
 venv
+dist
+downloads
+eggs
+parts
+*.egg-info

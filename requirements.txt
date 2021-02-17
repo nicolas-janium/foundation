@@ -20,3 +20,4 @@ numpy
 workdays
 cryptography
 pytest
+mock
