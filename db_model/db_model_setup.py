@@ -4,6 +4,9 @@ import json
 from uuid import uuid4
 import os
 from datetime import datetime, timedelta
+from workdays import networkdays, workday
+
+mtn_time = datetime.utcnow() - timedelta(hours=7)
 
 jonny_client_id = '67e736f3-9f35-4bf0-992f-1e8a5afa261a'
 
@@ -323,7 +326,7 @@ def add_jonny_records(session):
             ulinc_connector_campaign1.ulinc_ulinc_campaign_id,
             'Test{}'.format(i),
             'Contact{}'.format(i),
-            None, None, None, 'nic@janium.io', None, None, None, None, None
+            None, None, None, 'nic@janium.io', None, None, '12083133432', None, None
         )
         session.add(contact)
 
@@ -331,7 +334,7 @@ def add_jonny_records(session):
             str(uuid4()),
             contact.contact_id,
             1,
-            datetime.utcnow() - timedelta(hours=7),
+            workday(mtn_time, -21) if i == 6 else workday(mtn_time, -30) if i == 5 else mtn_time,
             None
         )
         session.add(connection_action)
@@ -345,6 +348,13 @@ def add_jonny_records(session):
                 'Message Body'
             )
             session.add(action)
+            if i == 7 and j == 6:
+                new_message_action = Action(str(uuid4()), contact.contact_id, 2, datetime.now(), None)
+                session.add(new_message_action)
+            elif i == 8 and j ==7:
+                new_message_action = Action(str(uuid4()), contact.contact_id, 6, datetime.now(), None)
+                session.add(new_message_action)
+
 
     session.commit()
 

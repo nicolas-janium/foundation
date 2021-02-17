@@ -10,7 +10,7 @@ from pprint import pprint
 
 from bs4 import BeautifulSoup as Soup
 from sqlalchemy import and_, or_
-from workdays import networkdays
+from workdays import networkdays, workday
 from tabulate import tabulate
 
 if not os.getenv('LOCAL_DEV'):
@@ -173,7 +173,7 @@ def get_new_connections(client_id, session):
     nc_contacts2 = []
     for contact in nc_contacts:
         if cnxn_date := contact.actions.filter(or_(Action.action_type_id == 1, Action.action_type_id == 14)).order_by(Action.action_type_id.desc()).first().action_timestamp:
-            if networkdays(mtn_time, cnxn_date) <= 3:
+            if networkdays(cnxn_date, mtn_time) <= 3:
                 nc_contacts2.append(
                     [
                         contact.full_name,
@@ -182,7 +182,7 @@ def get_new_connections(client_id, session):
                         contact.company,
                         contact.location,
                         contact.contact_ulinc_campaign.ulinc_campaign_name,
-                        cnxn_date,
+                        cnxn_date.date(),
                         contact.li_profile_url, 
                         contact.contact_id
                     ]
@@ -197,7 +197,7 @@ def get_new_messages(client_id, session):
     nm_contacts2 = []
     for contact in nm_contacts:
         if msg_action := contact.actions.filter(or_(Action.action_type_id == 2, Action.action_type_id == 6)).order_by(Action.action_timestamp).first():
-            if networkdays(mtn_time, msg_action.action_timestamp) <= 3:
+            if networkdays(msg_action.action_timestamp, mtn_time) <= 3:
                 nm_contacts2.append(
                     [
                         contact.full_name,
@@ -215,7 +215,7 @@ def get_new_messages(client_id, session):
                 )
     return nm_contacts2
 
-def get_new_voicemail_tasks(client_id, session):
+def get_new_voicemail_tasks(client_id, vm_delay, session):
     vm_contacts = [
         contact for contact in session.query(Contact).filter(and_(Contact.ulinc_ulinc_campaign_id != '1', Contact.client_id == client_id, Contact.phone != None)).all()
         if not contact.actions.filter(Action.action_type_id.in_([2,6,10,11])).first()
@@ -223,10 +223,11 @@ def get_new_voicemail_tasks(client_id, session):
     vm_contacts2 = []
     for contact in vm_contacts:
         if cnxn_date := contact.actions.filter(or_(Action.action_type_id == 1, Action.action_type_id == 14)).order_by(Action.action_type_id.desc()).first().action_timestamp:
-            if client.voicemail_task_delay <= networkdays(mtn_time, cnxn_date) <= client.voicemail_task_delay + 3:
+            if vm_delay <= networkdays(cnxn_date, mtn_time) <= vm_delay + 3:
                 vm_contacts2.append(
                     [
                         contact.full_name,
+                        'Placeholder',
                         contact.title,
                         contact.company,
                         contact.location,
@@ -260,7 +261,7 @@ def main(event, context):
         "dte_id": client_group.dte_id,
         "assistant_email": client.assistant_email if client.is_assistant else None
     }
-
+    # logger.debug(details)
     dte_subject = client_group.dte.subject
     dte_body = client_group.dte.body
 
@@ -272,7 +273,8 @@ def main(event, context):
     nm_contacts2 = get_new_messages(client.client_id, session)
 
     ### New Voicemail contacts for the New Voicemail table ###
-    vm_contacts2 = get_new_voicemail_tasks(client.client_id, session)
+    vm_contacts2 = get_new_voicemail_tasks(client.client_id, client.voicemail_task_delay, session)
+    # logger.debug(vm_contacts2)
     
     data_sets = [
         {"type": "connection", "data": nc_contacts2},
@@ -284,10 +286,10 @@ def main(event, context):
 
     dte_body = tailor_email(dte_body, details['client_ulinc_id'], client.first_name)
 
-    # send_dte_res = send_dte(dte_body, dte_subject, details)
-    # if send_dte_res:
-    #     logger.info('Sent DTE to {}'.format({"client_id": client.client_id, "client_full_name": client.full_name}))
-    #     return send_dte_res
+    send_dte_res = send_dte(dte_body, dte_subject, details)
+    if send_dte_res:
+        logger.info('Sent DTE to {}'.format({"client_id": client.client_id, "client_full_name": client.full_name}))
+        return send_dte_res
 
 
 if __name__ == '__main__':
