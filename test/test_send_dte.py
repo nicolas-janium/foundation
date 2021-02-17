@@ -29,7 +29,7 @@ def test_send_dte():
 def test_get_new_connections():
     session = Session()
     nc = function.get_new_connections('67e736f3-9f35-4bf0-992f-1e8a5afa261a', session)
-    assert nc[0][0] == 'Test1 Contact1' and len(nc) == 1
+    assert nc[0][0] == 'Test 1 Contact 1' and len(nc) == 1
 
 def test_get_new_messages():
     session = Session()

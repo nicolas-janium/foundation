@@ -117,7 +117,7 @@ def add_unassigned_records(session):
     session.commit()
 
 def add_janium_records(session):
-    janium_email_app_credentials = Credentials(Credentials.janium_email_app_credentials_id, 'nic@janium.io', 'nagxjkybavuiviyw')
+    janium_email_app_credentials = Credentials(Credentials.janium_email_app_credentials_id, os.getenv('NIC_EMAIL_APP_USERNAME'), os.getenv('NIC_EMAIL_APP_PASSWORD'))
     session.add(janium_email_app_credentials)
 
     janium_email_config = Email_config(
@@ -133,7 +133,7 @@ def add_janium_records(session):
         Dte.janium_dte_id,
         'Main DTE for Janium Users',
         'This is the main DTE for all users that are independent or belong to Janium',
-        'Janium Daily Task Email Subject',
+        'Janium Daily Task Test Email Subject',
         open("dte_templates/janium_dte.html", "r").read()
     )
     janium_dte_sender = Dte_sender(
@@ -170,7 +170,7 @@ def add_janium_records(session):
 def add_jonny_records(session):
     ## Credentials ##
     jonny_ulinc_credentials = Credentials(jonny_ulinc_credentials_id, 'jhawkes20@gmail.com', 'JA12345!')
-    jonny_email_app_credentials = Credentials(jonny_email_app_credentials_id, 'jason@thecxo100.com', 'fqgusrumwptpbpae')
+    jonny_email_app_credentials = Credentials(jonny_email_app_credentials_id, os.getenv('JASON_EMAIL_APP_USERNAME'), os.getenv('JASON_EMAIL_APP_PASSWORD'))
     session.add(jonny_ulinc_credentials)
     session.add(jonny_email_app_credentials)
 
@@ -215,7 +215,7 @@ def add_jonny_records(session):
         jonny_email_config.email_config_id,
         True, False, False, True, False, 'Jonny', 'Karate',
         None, None, None, 'nic@janium.io', None, None,
-        None, None, None, None, 20
+        None, None, None, None, 25
     )
     session.add(jonny_client)
     session.commit()
@@ -300,21 +300,22 @@ def add_jonny_records(session):
     session.add(jonny_webhook_response)
 
     ## Campaign Steps and contacts ##
-    for i in range(1, 9):
+    for i in range(1, 13):
         if i % 2 == 0:
             step_type = 'email'
         else:
             step_type = 'li_message'
-        campaign_step = Janium_campaign_step(
-            str(uuid4()),
-            janium_connector_campaign.janium_campaign_id,
-            campaign_step_type_dict[step_type]['id'],
-            True,
-            i * 3,
-            'Janium Campaign Step {} {} Body'.format(i, step_type),
-            'Janium Campaign Step {} {} Subject'.format(i, step_type) if i % 2 == 0 else None,
-        )
-        session.add(campaign_step)
+        if i < 9:
+            campaign_step = Janium_campaign_step(
+                str(uuid4()),
+                janium_connector_campaign.janium_campaign_id,
+                campaign_step_type_dict[step_type]['id'],
+                True,
+                i * 3,
+                'Janium Campaign Test 123 Step {} {} Body'.format(i, step_type),
+                'Janium Campaign Test 123 Step {} {} Subject'.format(i, step_type) if i % 2 == 0 else None,
+            )
+            session.add(campaign_step)
 
         contact = Contact(
             str(uuid4()),
@@ -324,8 +325,8 @@ def add_jonny_records(session):
             jonny_webhook_response.webhook_response_id,
             '56761861868',
             ulinc_connector_campaign1.ulinc_ulinc_campaign_id,
-            'Test{}'.format(i),
-            'Contact{}'.format(i),
+            'Test {}'.format(i),
+            'Contact {}'.format(i),
             None, None, None, 'nic@janium.io', None, None, '12083133432', None, None
         )
         session.add(contact)
@@ -334,26 +335,36 @@ def add_jonny_records(session):
             str(uuid4()),
             contact.contact_id,
             1,
-            workday(mtn_time, -21) if i == 6 else workday(mtn_time, -30) if i == 5 else mtn_time,
+            workday(mtn_time, -25) if i == 11 else workday(mtn_time, -40) if i == 12 else workday(mtn_time, (-3 * i) + 1),
             None
         )
         session.add(connection_action)
 
-        for j in range(1,i):
-            action = Action(
+        if i in [9,10]:
+            message_action = Action(
                 str(uuid4()),
                 contact.contact_id,
-                4 if j % 2 == 0 else 3,
-                datetime.now(),
-                'Message Body'
+                2 if i == 9 else 6,
+                mtn_time,
+                None
             )
-            session.add(action)
-            if i == 7 and j == 6:
-                new_message_action = Action(str(uuid4()), contact.contact_id, 2, datetime.now(), None)
-                session.add(new_message_action)
-            elif i == 8 and j ==7:
-                new_message_action = Action(str(uuid4()), contact.contact_id, 6, datetime.now(), None)
-                session.add(new_message_action)
+            session.add(message_action)
+
+        # for j in range(1,i):
+        #     action = Action(
+        #         str(uuid4()),
+        #         contact.contact_id,
+        #         4 if j % 2 == 0 else 3,
+        #         datetime.now(),
+        #         'Message Body'
+        #     )
+        #     session.add(action)
+        #     if i == 7 and j == 6:
+        #         new_message_action = Action(str(uuid4()), contact.contact_id, 2, datetime.now(), None)
+        #         session.add(new_message_action)
+        #     elif i == 8 and j ==7:
+        #         new_message_action = Action(str(uuid4()), contact.contact_id, 6, datetime.now(), None)
+        #         session.add(new_message_action)
 
 
     session.commit()

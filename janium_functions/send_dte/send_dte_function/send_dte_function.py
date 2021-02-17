@@ -268,6 +268,7 @@ def main(event, context):
 
     ### New Connection contacts for the New Connection table ###
     nc_contacts2 = get_new_connections(client.client_id, session)
+    # logger.debug(nc_contacts2)
 
     ### New Messages contacts for the New Messages table ###
     nm_contacts2 = get_new_messages(client.client_id, session)

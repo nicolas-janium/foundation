@@ -23,9 +23,8 @@ from html2text import html2text
 from sqlalchemy import or_
 from workdays import networkdays
 
-from db_model import *
-
-if os.getenv('IS_CLOUD') == 'True':
+if not os.getenv('LOCAL_DEV'):
+    from db_model import *
     logger = logging.getLogger('send_email')
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(levelname)s - %(message)s')
@@ -34,6 +33,8 @@ if os.getenv('IS_CLOUD') == 'True':
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 else:
+    from janium_functions.send_dte.send_dte_function.db_model import *
+
     logger = logging.getLogger('send_email')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(levelname)s - %(message)s')
@@ -161,13 +162,8 @@ def send_email_with_sendgrid(details, session):
 
 def send_email(details, session):
     username, password = details['email_creds']
-    if details['testing'] == 'true':
-        if details['mail-tester'] == 'true':
-            recipient = 'narnold113-KFWW@srv1.mail-tester.com'
-        else:
-            recipient = 'nic@janium.io'
-    else:
-        recipient = details['contact_email']
+
+    recipient = details['contact_email']
 
     contact_id = details['contact_id']
     action_id = str(uuid4())
@@ -199,85 +195,82 @@ def send_email(details, session):
             server.send_message(main_email)
             # print("Sent an email to {} for client {}".format(details['contactid'], details['client_fullname']))
 
-        if details['testing'] == 'true' or details['mail-tester'] =='true':
-            pass
-        else:
-            action = Action(action_id, contact_id, 4, mtn_time, email_html)
-            session.add(action)
-            session.commit()
+        action = Action(action_id, contact_id, 4, mtn_time, email_html)
+        session.add(action)
+        session.commit()
         return details['contact_email']
 
     except Exception as err:
-        logger.error(str("There was an error while sending an email to {} for client {}. Error: {}".format(details['contact_email'], details['client_fullname'], err)))
+        logger.error(str("There was an error while sending an email to {} for client {}. Error: {}".format(details['contact_email'], details['client_full_name'], err)))
         return None
 
-def main(event, context):
-    session = Session()
+def get_email_targets(client, janium_campaign, is_sendgrid):
+    steps = janium_campaign.janium_campaign_steps.order_by(Janium_campaign_step.janium_campaign_step_delay).all()
 
+    contacts = [
+        contact 
+        for contact 
+        in janium_campaign.contacts.filter(Contact.email1 != None).order_by(Contact.full_name).all() 
+        if not contact.actions.filter(Action.action_type_id.in_([2,6,7,11,15])).first()
+    ]
+    email_targets_list = []
+    for contact in contacts:
+        cnxn_date = contact.actions.filter(or_(Action.action_type_id == 1, Action.action_type_id == 14)).order_by(Action.action_type_id.desc()).first().action_timestamp
+        for i, step in enumerate(steps):
+            if step.janium_campaign_step_type_id == 2:
+                add_contact = False
+                if i + 1 < len(steps):
+                    if step.janium_campaign_step_delay <= networkdays(cnxn_date, mtn_time) < steps[i + 1].janium_campaign_step_delay:
+                        add_contact = True
+                else:
+                    if step.janium_campaign_step_delay <= networkdays(cnxn_date, mtn_time) < step.janium_campaign_step_delay + 2:
+                        add_contact = True
+                if add_contact:
+                    email_targets_list.append(
+                        {
+                            "is_sendgrid": is_sendgrid,
+                            "sendgrid_sender_id": client.email_config.sendgrid_sender_id if is_sendgrid else None,
+                            "client_full_name": client.full_name,
+                            "smtp_address": None if is_sendgrid else client.email_config.email_server.smtp_address,
+                            "smtp_port": None if is_sendgrid else client.email_config.email_server.smtp_tls_port,
+                            "email_creds": None if is_sendgrid else (client.email_config.credentials.username, client.email_config.credentials.password),
+                            "contact_id": contact.contact_id,
+                            "contact_first_name": contact.first_name,
+                            "contact_full_name": contact.full_name,
+                            "contact_email": contact.email1,
+                            "email_subject": step.janium_campaign_step_subject,
+                            "email_body": step.janium_campaign_step_body                                
+                        }
+                    )
+    return email_targets_list
+
+def main(event, context):
     pubsub_message = base64.b64decode(event['data']).decode('utf-8')
     payload_json = json.loads(pubsub_message)
 
+    session = Session()
     client = session.query(Client).filter(Client.client_id == payload_json['client_id']).first()
 
     is_sendgrid = True if client.email_config.is_sendgrid and client.email_config.sendgrid_sender_id else False
-    for janium_campaign in client.campaigns.filter(Janium_campaign.is_active == 1).all():
-        logger.debug('{}'.format(janium_campaign.janium_campaign_name))
+    for janium_campaign in client.janium_campaigns.filter(Janium_campaign.is_active == 1).all():
 
-        steps = janium_campaign.janium_campaign_steps.order_by(Janium_campaign_step.janium_campaign_step_delay).all()
+        email_targets_list = get_email_targets(client, janium_campaign, is_sendgrid)
+        pprint(email_targets_list)
 
-        contacts = [
-            contact 
-            for contact 
-            in janium_campaign.contacts.filter(Contact.email1 != None).order_by(Contact.full_name).all() 
-            if not contact.actions.filter(Action.action_type_id.in_([2,6,7,11,15])).first()
-        ]
-        email_targets_list = []
-        for contact in contacts:
-            cnxn_date = contact.actions.filter(or_(Action.action_type_id == 1, Action.action_type_id == 14)).order_by(Action.action_type_id.desc()).first().action_timestamp
-            for i, step in enumerate(steps):
-                if step.janium_campaign_step_type_id == 2:
-                    add_contact = False
-                    if i + 1 < len(steps):
-                        if step.janium_campaign_step_delay <= networkdays(cnxn_date, mtn_time) < steps[i + 1].janium_campaign_step_delay:
-                            add_contact = True
-                    else:
-                        if step.janium_campaign_step_delay <= networkdays(cnxn_date, mtn_time) < step.janium_campaign_step_delay + 2:
-                            add_contact = True
-                    if add_contact:
-                        email_targets_list.append(
-                            {
-                                "is_sendgrid": is_sendgrid,
-                                "sendgrid_sender_id": client.email_config.sendgrid_sender_id if is_sendgrid else None,
-                                "client_full_name": client.full_name,
-                                "smtp_address": None if is_sendgrid else client.email_config.email_server.smtp_address,
-                                "smtp_port": None if is_sendgrid else client.email_config.email_server.smtp_tls_port,
-                                "email_creds": None if is_sendgrid else (client.email_config.credentials.username, client.email_config.credentials.password),
-                                "contact_id": contact.contact_id,
-                                "contact_first_name": contact.first_name,
-                                "contact_email": contact.email1,
-                                "email_subject": step.janium_campaign_step_subject,
-                                "email_body": step.janium_campaign_step_body,
-                                "testing": payload_json['testing'],
-                                "mail-tester": payload_json['mail-tester']
-                                
-                            }
-                        )
         recipient_list = []
         for email_target in email_targets_list:
-            logger.debug(email_target)
             if email_target['is_sendgrid']:
                 send_email_res = send_email_with_sendgrid(email_target, session)
             else:
                 send_email_res = send_email(email_target, session)
-            recipient_list.append(send_email_res)
-            clients_list.append(client.full_name)
-        logger.info('Sent emails to {} for client {} in campaign {} with {}'.format(recipient_list, client.full_name, janium_campaign.janium_campaign_name, 'sendgrid' if is_sendgrid else 'email app'))
-
+            recipient_list.append({"contact_full_name": email_target['contact_full_name'], "contact_email_address": email_target['contact_email'], "contact_id": email_target['contact_id']})
+        logger_message = 'Sent emails to {} for client {} in campaign {} with {}'.format(recipient_list, client.full_name, janium_campaign.janium_campaign_name, 'sendgrid' if is_sendgrid else 'email app')
+        logger.info(logger_message)
+        # return logger_message
 
 if __name__ == '__main__':
     payload = {
-        "testing": "true",
-        "mail-tester": "false"
+        "client_id": "67e736f3-9f35-4bf0-992f-1e8a5afa261a"
     }
     payload = json.dumps(payload)
     payload = base64.b64encode(str(payload).encode("utf-8"))

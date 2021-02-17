@@ -117,7 +117,7 @@ class Client(Base):
     updatedBy = Column(String(36), server_default=text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"))
 
     # SQLAlchemy Relationships and Backreferences
-    campaigns = relationship('Janium_campaign', backref=backref('janium_campaign_client', uselist=False), uselist=True, lazy='dynamic')
+    janium_campaigns = relationship('Janium_campaign', backref=backref('janium_campaign_client', uselist=False), uselist=True, lazy='dynamic')
     ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('ulinc_campaign_client', uselist=False), uselist=True, lazy='dynamic')
     contacts = relationship('Contact', backref=backref('contact_client', uselist=False), uselist=True, lazy='dynamic')
     email_config = relationship('Email_config', backref=backref('email_config_client', uselist=False), uselist=False, lazy=True)

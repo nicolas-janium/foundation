@@ -117,7 +117,7 @@ class Client(Base):
     updatedBy = Column(String(36), server_default=text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"))
 
     # SQLAlchemy Relationships and Backreferences
-    campaigns = relationship('Janium_campaign', backref=backref('janium_campaign_client', uselist=False), uselist=True, lazy='dynamic')
+    janium_campaigns = relationship('Janium_campaign', backref=backref('janium_campaign_client', uselist=False), uselist=True, lazy='dynamic')
     ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('ulinc_campaign_client', uselist=False), uselist=True, lazy='dynamic')
     contacts = relationship('Contact', backref=backref('contact_client', uselist=False), uselist=True, lazy='dynamic')
     email_config = relationship('Email_config', backref=backref('email_config_client', uselist=False), uselist=False, lazy=True)
@@ -577,6 +577,7 @@ class Dte(Base):
 class Email_config(Base):
     __tablename__ = 'email_config'
     janium_email_config_id = '709f79b3-7a20-43ff-844a-4f014fa4e406'
+    unassigned_email_config = '7c5c4aa2-2c6e-4e3d-947e-6efdae4366a1'
 
     def __init__(self, email_config_id, credentials_id, email_server_id, is_sendgrid, sendgrid_sender_id):
         self.email_config_id = email_config_id
