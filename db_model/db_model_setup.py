@@ -97,7 +97,7 @@ def add_unassigned_records(session):
 
     unassigned_client = Client(
         str(uuid4()), unassigned_client_group.client_group_id, unassigned_ulinc_config.ulinc_config_id, unassigned_email_config.email_config_id,
-        False, False, False, False, False, 'Unassigned', 'Client', None, None, None, 'unassigned@gmail.com', None, None, None, None, None, None, None
+        False, False, False, False, False, 'Unassigned', 'Client', None, None, None, 'unassigned@gmail.com', None, None, None, None, None, None, None, False
     )
     session.add(unassigned_client)
 
@@ -215,7 +215,7 @@ def add_jonny_records(session):
         jonny_email_config.email_config_id,
         True, True, True, True, False, 'Jonny', 'Karate',
         None, None, None, 'nic@janium.io', None, None,
-        None, None, None, None, 25
+        None, None, None, None, 25, False
     )
     session.add(jonny_client)
     session.commit()
@@ -327,7 +327,7 @@ def add_jonny_records(session):
             ulinc_connector_campaign1.ulinc_ulinc_campaign_id,
             'Test {}'.format(i),
             'Contact {}'.format(i),
-            None, None, None, 'nic@janium.io', None, None, '12083133432', None, None
+            None, None, None, 'nic@janium.io', None, None, '12083133432', None, None, None
         )
         session.add(contact)
 

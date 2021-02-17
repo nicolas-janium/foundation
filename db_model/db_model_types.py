@@ -73,6 +73,14 @@ action_type_dict = {
     "email_bounce": {
         "id": 15,
         "description": "The contact was sent an email that bounced. Originates from Sendgrid"
+    },
+    "tib_new_vendor": {
+        "id": 16,
+        "description": "When a new vendor registers on TIB"
+    },
+    "tib_vendor_retire": {
+        "id": 17,
+        "description": "When a new vendor submits a meeting request"
     }
 }
 

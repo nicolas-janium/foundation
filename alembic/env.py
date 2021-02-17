@@ -23,7 +23,7 @@ fileConfig(config.config_file_name)
 # target_metadata = mymodel.Base.metadata
 import sys
 sys.path.append('/home/nicolas/projects/janium/foundation/')
-from src.db_model import Base, db_url
+from db_model.db_model import Base, db_url
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

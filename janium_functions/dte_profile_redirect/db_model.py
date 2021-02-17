@@ -53,7 +53,7 @@ class Client(Base):
 
     def __init__(self, client_id, client_group_id, ulinc_config_id, email_config_id, is_active, is_sending_emails, is_sending_li_messages,
                        is_dte, is_assistant, first_name, last_name, title, company, location, primary_email, campaign_management_email,
-                       alternate_dte_email, phone, assistant_first_name, assistant_last_name, assistant_email, voicemail_task_delay):
+                       alternate_dte_email, phone, assistant_first_name, assistant_last_name, assistant_email, voicemail_task_delay, is_email_forward):
         self.client_id = client_id
         self.client_group_id = client_group_id
         self.ulinc_config_id = ulinc_config_id
@@ -76,6 +76,7 @@ class Client(Base):
         self.assistant_last_name = assistant_last_name
         self.assistant_email = assistant_email
         self.voicemail_task_delay = voicemail_task_delay
+        self.is_email_forward = is_email_forward
 
     # Primary Keys
     client_id = Column(String(36), primary_key=True)
@@ -91,6 +92,7 @@ class Client(Base):
     is_sending_li_messages = Column(Boolean, nullable=False, server_default=false())
     is_dte = Column(Boolean, nullable=False, server_default=false())
     is_assistant = Column(Boolean, nullable=False, server_default=false())
+    is_email_forward = Column(Boolean, nullable=False, server_default=false())
 
     first_name = Column(String(126), nullable=False)
     last_name = Column(String(126), nullable=False)
@@ -334,7 +336,7 @@ class Contact(Base):
     __tablename__ = 'contact'
 
     def __init__(self, contact_id, client_id, janium_campaign_id, ulinc_campaign_id, webhook_response_id, ulinc_id, ulinc_ulinc_campaign_id, first_name, last_name, title,
-                 company, location, email1, email2, email3, phone, website, li_profile_url):
+                 company, location, email1, email2, email3, phone, website, li_profile_url, tib_id):
         self.contact_id = contact_id
 
         self.client_id = client_id
@@ -355,6 +357,7 @@ class Contact(Base):
         self.phone = phone
         self.website = website
         self.li_profile_url = li_profile_url
+        self.tib_id = tib_id
 
     # Primary Keys
     contact_id = Column(String(36), primary_key=True, nullable=False)
@@ -380,6 +383,7 @@ class Contact(Base):
     phone = Column(String(250), nullable=True)
     website = Column(String(250), nullable=True)
     li_profile_url = Column(String(500), nullable=True)
+    tib_id = Column(String(36), nullable=True)
 
     # Table Metadata
     asOfStartTime = Column(DateTime, server_default=func.now())
