@@ -18,13 +18,13 @@ mock_context = mock.Mock()
 mock_context.event_id = '617187464135194'
 mock_context.timestamp = mtn_time
 
-def test_send_dte():
-    payload = {"from": "schedule"}
-    payload = json.dumps(payload)
-    payload = base64.b64encode(str(payload).encode("utf-8"))
-    event = {"data": payload}
+# def test_send_dte():
+#     payload = {"from": "schedule"}
+#     payload = json.dumps(payload)
+#     payload = base64.b64encode(str(payload).encode("utf-8"))
+#     event = {"data": payload}
 
-    assert 'nic@janium.io' == director.main(event, mock_context)
+#     assert 'nic@janium.io' == director.main(event, mock_context)
 
 def test_get_new_connections():
     session = Session()

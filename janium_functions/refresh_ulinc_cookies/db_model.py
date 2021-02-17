@@ -645,6 +645,7 @@ class Email_server(Base):
 
 class Ulinc_config(Base):
     __tablename__ = 'ulinc_config'
+    unassigned_ulinc_config = 'dff0e400-b338-4bc5-bb99-617bade305bd'
 
     def __init__(self, ulinc_config_id, credentials_id, cookie_id, client_ulinc_id, new_connection_webhook, new_message_webhook, send_message_webhook):
         self.ulinc_config_id = ulinc_config_id

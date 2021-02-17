@@ -69,7 +69,7 @@ def add_unassigned_records(session):
     unassigned_ulinc_cookie = Cookie(str(uuid4()), 1, {'key': 'Some value'})
     session.add(unassigned_ulinc_cookie)
 
-    unassigned_ulinc_config = Ulinc_config(str(uuid4()), unassigned_ulinc_credentials.credentials_id, unassigned_ulinc_cookie.cookie_id, '', '', '', '')
+    unassigned_ulinc_config = Ulinc_config(Ulinc_config.unassigned_ulinc_config, unassigned_ulinc_credentials.credentials_id, unassigned_ulinc_cookie.cookie_id, '', '', '', '')
     session.add(unassigned_ulinc_config)
 
     unassigned_email_config = Email_config(Email_config.unassigned_email_config, unassigned_email_app_credentials.credentials_id, 'f9cf23f6-231c-4210-90f3-7749873909ad', False, None)
@@ -213,7 +213,7 @@ def add_jonny_records(session):
         Client_group.janium_client_group_id, 
         jonny_ulinc_config.ulinc_config_id,
         jonny_email_config.email_config_id,
-        True, False, False, True, False, 'Jonny', 'Karate',
+        True, True, True, True, False, 'Jonny', 'Karate',
         None, None, None, 'nic@janium.io', None, None,
         None, None, None, None, 25
     )

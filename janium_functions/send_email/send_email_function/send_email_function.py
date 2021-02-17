@@ -33,7 +33,7 @@ if not os.getenv('LOCAL_DEV'):
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 else:
-    from janium_functions.send_dte.send_dte_function.db_model import *
+    from janium_functions.send_email.send_email_function.db_model import *
 
     logger = logging.getLogger('send_email')
     logger.setLevel(logging.DEBUG)
