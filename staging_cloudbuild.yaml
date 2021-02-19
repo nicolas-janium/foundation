@@ -1,10 +1,47 @@
 steps:
-# - name: 'gcr.io/cloud-builders/git'
-#   args: ['fetch', '--unshallow']
-# # - name: 'gcr.io/cloud-builders/git'
-# #   args: ['branch']
+  # - name: 'gcr.io/cloud-builders/git'
+  #   args: ['fetch', '--unshallow']
+  # # - name: 'gcr.io/cloud-builders/git'
+  # #   args: ['branch']
 
+  # - name: "gcr.io/cloud-builders/gcloud"
+  #   entrypoint: "bash"
 
-- name: 'gcr.io/cloud-builders/gcloud'
-  entrypoint: 'bash'
-  args: ['./janium_deploy.sh']
+    # args: ['./janium_deploy.sh']
+  - id: "deploy poll webhook function"
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    args:
+      - functions
+      - deploy
+      - poll-webhook-function
+      - --runtime=python38
+      - --timeout=180
+      - --region=us-central1
+      - --trigger-topic=janium-poll-webhook-topic
+      - --source=./janium_functions/poll_webhook/poll_webhook_function
+      - --entry-point=main
+      - --egress-settings=private-ranges-only
+      - --vpc-connector=staging-vpc-connector
+      - --set-env-vars PROJECT_ID=$PROJECT_ID, DB_USER=gcf, DB_PASSWORD=$$DB_PASSWORD_SECRET, DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET, DB_DATABASE=staging
+
+  - id: "deploy poll webhook director"
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    args:
+      - functions
+      - deploy
+      - poll-webhook-director
+      - --runtime=python38
+      - --timeout=180
+      - --region=us-central1
+      - --trigger-topic=janium-poll-webhook-director-topic
+      - --source=./janium_functions/poll_webhook/poll_webhook_director
+      - --entry-point=main
+      - --egress-settings=private-ranges-only
+      - --vpc-connector=staging-vpc-connector
+      - --set-env-vars PROJECT_ID=$PROJECT_ID, DB_USER=gcf, DB_PASSWORD=$$DB_PASSWORD_SECRET, DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET, DB_DATABASE=staging
+availableSecrets:
+  secretManager:
+  - versionName: projects/$PROJECT_ID/secrets/staging_db_password/versions/latest
+    env: 'DB_PASSWORD_SECRET'
+  - versionName: projects/$PROJECT_ID/secrets/staging_db_private_host/versions/latest
+    env: 'DB_PRIVATE_HOST_SECRET'
