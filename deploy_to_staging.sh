@@ -41,4 +41,4 @@ else
     mysql --login-path=staging -D ${db_db} -e "$sql_migration_script"
 fi
 
-# git checkout staging && git merge dev
+git checkout staging && git merge dev
