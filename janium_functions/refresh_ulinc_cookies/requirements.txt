@@ -1,5 +1,0 @@
-requests
-sqlalchemy
-pymysql
-google-cloud-secret-manager
-google-auth

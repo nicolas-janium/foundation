@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+from db.model import Base, db_url
 
 db_url = 'mysql+pymysql://{}:{}@{}:{}/{}'.format(os.getenv('DB_USER'), os.getenv('DB_PASSWORD'), os.getenv('DB_HOST'), os.getenv('DB_PORT'), os.getenv('DB_NAME'))
 
@@ -21,9 +22,6 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-import sys
-sys.path.append('/home/nicolas/projects/janium/foundation/')
-from db_model.db_model import Base, db_url
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

@@ -2,6 +2,4 @@ requests
 nameparser
 sqlalchemy
 pymysql
-google-cloud-secret-manager
-google-auth
 colorama

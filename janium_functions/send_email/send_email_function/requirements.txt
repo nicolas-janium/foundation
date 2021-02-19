@@ -1,8 +1,6 @@
 sqlalchemy
 pymysql
-beautifulsoup4
-holidays==0.10.3
-google-cloud-secret-manager
-google-auth
 requests
+beautifulsoup4
 html2text
+workdays

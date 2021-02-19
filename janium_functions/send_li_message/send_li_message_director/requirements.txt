@@ -1,8 +1,4 @@
-requests
 sqlalchemy
 pymysql
-beautifulsoup4
-google-cloud-secret-manager
-google-auth
 holidays==0.10.3
-html2text
+google-cloud-pubsub

@@ -1,11 +1,10 @@
 import base64
 import json
 import logging
+import os
 from datetime import datetime
 from pprint import pprint
-import os
 
-import holidays
 import requests
 import urllib3
 from bs4 import BeautifulSoup as Soup
@@ -15,7 +14,7 @@ from workdays import networkdays
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 if not os.getenv('LOCAL_DEV'):
-    from db_model import *
+    from model import *
 
     logger = logging.getLogger('send_li_message_function')
     logger.setLevel(logging.INFO)
@@ -25,7 +24,7 @@ if not os.getenv('LOCAL_DEV'):
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 else:
-    from janium_functions.send_li_message.send_li_message_function.db_model import *
+    from db.model import *
 
     logger = logging.getLogger('send_li_message_function')
     logger.setLevel(logging.DEBUG)
@@ -134,7 +133,7 @@ def main(event, context):
 
     for janium_campaign in client.janium_campaigns.filter(Janium_campaign.is_active == 1).all():
         li_message_targets_list = get_li_message_targets(client, janium_campaign)
-        # pprint(li_message_targets_list)
+        pprint(li_message_targets_list)
 
         recipient_list = []
         for li_message_target in li_message_targets_list:
@@ -145,7 +144,7 @@ def main(event, context):
 
 if __name__ == '__main__':
     payload = {
-    "client_id": "67e736f3-9f35-4bf0-992f-1e8a5afa261a"
+        "client_id": "67e736f3-9f35-4bf0-992f-1e8a5afa261a"
     }
     payload = json.dumps(payload)
     payload = base64.b64encode(str(payload).encode("utf-8"))

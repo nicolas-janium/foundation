@@ -1,6 +1,4 @@
-requests
 sqlalchemy
 pymysql
 beautifulsoup4
-google-cloud-secret-manager
-google-auth
+requests

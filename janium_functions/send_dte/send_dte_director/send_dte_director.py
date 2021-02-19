@@ -9,12 +9,8 @@ import holidays
 from google.cloud import pubsub_v1
 from sqlalchemy import and_, or_
 
-# Instantiates a Pub/Sub client
-publisher = pubsub_v1.PublisherClient()
-PROJECT_ID = 'janium-foundation'
-
 if not os.getenv('LOCAL_DEV'):
-    from db_model import *
+    from model import *
 
     logger = logging.getLogger('send_dte_director')
     logger.setLevel(logging.INFO)
@@ -24,8 +20,8 @@ if not os.getenv('LOCAL_DEV'):
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 else:
-    from janium_functions.send_dte.send_dte_director.db_model import *
-    from janium_functions.send_dte.send_dte_function import send_dte_function
+    from db.model import *
+    from janium_functions.send_dte.send_dte_function import send_dte_function as function
 
     logger = logging.getLogger('send_dte_director')
     logger.setLevel(logging.DEBUG)
@@ -35,7 +31,13 @@ else:
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 
+
 def main(event, context):
+    # Instantiates a Pub/Sub client
+    publisher = pubsub_v1.PublisherClient()
+    PROJECT_ID = os.getenv('PROJECT_ID')
+    topic_path = publisher.topic_path(PROJECT_ID, 'janium-send-dte-topic')
+
     session = Session()
 
     now = datetime.now()
@@ -46,7 +48,6 @@ def main(event, context):
     us_holidays.append(datetime(now.year, 1, 1)) # New Years Day
 
     clients = session.query(Client).filter(and_(Client.is_active == 1, Client.is_dte == 1)).all()
-    topic_path = publisher.topic_path(PROJECT_ID, 'janium-send-dte-topic')
 
     if now_date not in us_holidays:
         clients_list = []
@@ -65,7 +66,7 @@ def main(event, context):
                     payload = {"client_id": client.client_id}
                     payload = json.dumps(payload)
                     payload = base64.b64encode(str(payload).encode("utf-8"))
-                    return send_dte_function.main({"data": payload}, 1)
+                    return function.main({"data": payload}, 1)
                 clients_list.append({"client_id": client.client_id, "client_full_name": client.full_name})
                 # return 'OKKKK'
             except Exception as err:

@@ -13,19 +13,16 @@ from email.utils import make_msgid
 from pprint import pprint
 from uuid import uuid4
 
-import google.auth
-import holidays
 import requests
 from bs4 import BeautifulSoup as Soup
-from google.cloud import secretmanager
-from google.oauth2 import service_account
 from html2text import html2text
 from sqlalchemy import or_
 from workdays import networkdays
 
 if not os.getenv('LOCAL_DEV'):
-    from db_model import *
-    logger = logging.getLogger('send_email')
+    from model import *
+
+    logger = logging.getLogger('send_email_function')
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(levelname)s - %(message)s')
     logHandler = logging.StreamHandler()
@@ -33,9 +30,9 @@ if not os.getenv('LOCAL_DEV'):
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 else:
-    from janium_functions.send_email.send_email_function.db_model import *
+    from db.model import *
 
-    logger = logging.getLogger('send_email')
+    logger = logging.getLogger('send_email_function')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(levelname)s - %(message)s')
     logHandler = logging.StreamHandler()
@@ -44,19 +41,12 @@ else:
     logger.addHandler(logHandler)
 
 mtn_time = datetime.utcnow() - timedelta(hours=7)
+PROJECT_ID = os.getenv('PROJECT_ID')
 
-def get_sendgrid_key():
-    creds, project = google.auth.default()
-    client = secretmanager.SecretManagerServiceClient(credentials=creds)
-    secret_name = "sendgrid-api-key"
-    project_id = "janium-foundation"
-    request = {"name": f"projects/{project_id}/secrets/{secret_name}/versions/latest"}
-    response = client.access_secret_version(request)
-    return response.payload.data.decode('UTF-8')
 
 def get_sendgrid_headers():
     headers = {
-        "authorization": "Bearer {}".format(get_sendgrid_key())
+        "authorization": "Bearer {}".format(os.getenv('SENDGRID_API_KEY'))
     }
     return headers
 
@@ -78,7 +68,7 @@ def get_sendgrid_sender(sender_id):
         return None
 
 def add_footer(email_html, contact_id, contact_email):
-    opt_out_url = str(os.getenv('EMAIL_OPT_OUT_URL'))
+    opt_out_url = "https://us-central1-{}.cloudfunctions.net/email-opt-out-function".format(PROJECT_ID)
     opt_out_url += "?contact_id={}&landing=1&contact_email={}".format(contact_id, contact_email)
     soup = Soup(email_html, 'html.parser')
     div = soup.new_tag('div')
@@ -266,7 +256,6 @@ def main(event, context):
             recipient_list.append({"contact_full_name": email_target['contact_full_name'], "contact_email_address": email_target['contact_email'], "contact_id": email_target['contact_id']})
         logger_message = 'Sent emails to {} for client {} in campaign {} with {}'.format(recipient_list, client.full_name, janium_campaign.janium_campaign_name, 'sendgrid' if is_sendgrid else 'email app')
         logger.info(logger_message)
-        # return logger_message
 
 if __name__ == '__main__':
     payload = {
@@ -278,5 +267,3 @@ if __name__ == '__main__':
         "data": payload
     }
     main(event, 1)
-
-    # print(get_sendgrid_sender('1326405'))

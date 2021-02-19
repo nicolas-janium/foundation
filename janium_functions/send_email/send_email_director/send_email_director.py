@@ -9,12 +9,8 @@ import holidays
 from google.cloud import pubsub_v1
 from sqlalchemy import and_, or_
 
-# Instantiates a Pub/Sub client
-publisher = pubsub_v1.PublisherClient()
-PROJECT_ID = 'janium-foundation'
-
 if not os.getenv('LOCAL_DEV'):
-    from db_model import *
+    from model import *
 
     logger = logging.getLogger('send_email_director')
     logger.setLevel(logging.INFO)
@@ -24,8 +20,8 @@ if not os.getenv('LOCAL_DEV'):
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 else:
-    from janium_functions.send_email.send_email_director.db_model import *
-    from janium_functions.send_email.send_email_function.db_model import *
+    from db.model import *
+    from janium_functions.send_email.send_email_function import send_email_function as function
 
     logger = logging.getLogger('send_email_director')
     logger.setLevel(logging.DEBUG)
@@ -35,9 +31,14 @@ else:
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 
+PROJECT_ID = os.getenv('PROJECT_ID')
+
 def main(event, context):
-    session = Session()
+    # Instantiates a Pub/Sub client
+    publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path(PROJECT_ID, 'janium-send-email-topic')
+
+    session = Session()
 
     now = datetime.now()
     now_date = now.date()
@@ -48,7 +49,7 @@ def main(event, context):
 
     clients = session.query(Client).filter(Client.is_active == 1)\
                                    .filter(Client.is_sending_emails == 1)\
-                                   .filter(Client.email_config_id != Email_config.unassigned_email_config)\
+                                   .filter(Client.email_config_id != Email_config.unassigned_email_config_id)\
                                    .all()
 
     if now_date not in us_holidays:
@@ -68,7 +69,7 @@ def main(event, context):
                     payload = {"client_id": client.client_id}
                     payload = json.dumps(payload)
                     payload = base64.b64encode(str(payload).encode("utf-8"))
-                    return send_dte_function.main({"data": payload}, 1)
+                    function.main({"data": payload}, 1)
                 clients_list.append({"client_id": client.client_id, "client_full_name": client.full_name})
             except Exception as err:
                 logger.error(str(err))

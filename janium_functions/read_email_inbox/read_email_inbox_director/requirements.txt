@@ -1,0 +1,5 @@
+sqlalchemy
+pymysql
+google-cloud-pubsub
+holidays==0.10.3
+colorama

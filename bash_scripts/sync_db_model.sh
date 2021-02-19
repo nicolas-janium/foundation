@@ -1,1 +1,1 @@
-find /home/nicolas/projects/janium/foundation/janium_functions -name db_model.py -exec rsync /home/nicolas/projects/janium/foundation/db_model/db_model.py {} \;
+find /home/nicolas/projects/janium/foundation/janium_functions -name model.py -exec rsync /home/nicolas/projects/janium/foundation/db/model.py {} \;

@@ -11,11 +11,10 @@ from pprint import pprint
 from bs4 import BeautifulSoup as Soup
 from sqlalchemy import and_, or_
 from workdays import networkdays, workday
-from tabulate import tabulate
 
 if not os.getenv('LOCAL_DEV'):
-    from db_model import *
-    logger = logging.getLogger('send_dte')
+    from model import *
+    logger = logging.getLogger('send_dte_function')
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(levelname)s - %(message)s')
     logHandler = logging.StreamHandler()
@@ -23,9 +22,9 @@ if not os.getenv('LOCAL_DEV'):
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 else:
-    from janium_functions.send_dte.send_dte_function.db_model import *
+    from db.model import *
 
-    logger = logging.getLogger('send_dte')
+    logger = logging.getLogger('send_dte_function')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(levelname)s - %(message)s')
     logHandler = logging.StreamHandler()
@@ -34,6 +33,7 @@ else:
     logger.addHandler(logHandler)
 
 mtn_time = datetime.utcnow() - timedelta(hours=7)
+PROJECT_ID = os.getenv('PROJECT_ID')
 
 def populate_table(email_body, data_set_dict, client_id):
     soup = Soup(email_body, 'html.parser')
@@ -49,11 +49,11 @@ def populate_table(email_body, data_set_dict, client_id):
             if i % 2 == 0:
                 if j == 0:
                     if data_set_dict['type'] == 'connection':
-                        redirect_url = "https://us-central1-janium0-0.cloudfunctions.net/dte-profile-redirect-function?contactid={}&redirect_url={}&from=connection".format(row[8], str(row[7]))
+                        redirect_url = "https://us-central1-{}.cloudfunctions.net/dte-profile-redirect-function?contact_id={}&redirect_url={}&from=connection".format(PROJECT_ID, row[8], str(row[7]))
                     elif data_set_dict['type'] == 'message':
-                        redirect_url = "https://us-central1-janium0-0.cloudfunctions.net/dte-profile-redirect-function?contactid={}&redirect_url={}&from=message".format(row[9], str(row[8]))
+                        redirect_url = "https://us-central1-{}.cloudfunctions.net/dte-profile-redirect-function?contact_id={}&redirect_url={}&from=message".format(PROJECT_ID, row[9], str(row[8]))
                     else:
-                        redirect_url = "https://us-central1-janium0-0.cloudfunctions.net/dte-profile-redirect-function?contactid={}&redirect_url={}&from=voicemail".format(row[6], str(row[7]))
+                        redirect_url = "https://us-central1-{}.cloudfunctions.net/dte-profile-redirect-function?contact_id={}&redirect_url={}&from=voicemail".format(PROJECT_ID, row[6], str(row[7]))
 
                     td = soup.new_tag("td", **{'class': 'tg-kmlv'})
                     name = soup.new_tag("a", href=redirect_url)
@@ -63,14 +63,14 @@ def populate_table(email_body, data_set_dict, client_id):
                 elif j == 1:
                     if data_set_dict['type'] == 'connection':
                         td = soup.new_tag("td", **{'class': 'tg-kmlv'})
-                        dq_url = "https://us-central1-janium0-0.cloudfunctions.net/dte-dq-contact-function?contactid={}&contact_fullname={}&client_id={}".format(str(row[8]), str(row[0]), client_id)
+                        dq_url = "https://us-central1-{}.cloudfunctions.net/dte-dq-contact-function?contact_id={}&contact_full_name={}&client_id={}".format(PROJECT_ID, str(row[8]), str(row[0]), client_id)
                         dq_button = soup.new_tag("a", href=dq_url, **{'class': 'btn-remove', 'style': 'color:red'})
                         dq_button.string = 'DQ'
                         td.append(dq_button)
                         tr_tag.append(td)
                     elif data_set_dict['type'] == 'message':
                         td = soup.new_tag("td", **{'class': 'tg-kmlv'})
-                        resume_url = "https://us-central1-janium0-0.cloudfunctions.net/dte-resume-campaign-function?activityid={}&contact_fullname={}&contactid={}&client_id={}".format(str(row[10]), str(row[0]), str(row[9]), client_id)
+                        resume_url = "https://us-central1-{}.cloudfunctions.net/dte-resume-campaign-function?action_id={}&contact_full_name={}&contact_id={}&client_id={}".format(PROJECT_ID, str(row[10]), str(row[0]), str(row[9]), client_id)
                         resume_button = soup.new_tag("a", href=resume_url, **{'class': 'btn-continue', 'style': 'color:green'})
                         resume_button.string = 'Continue'
                         td.append(resume_button)
@@ -84,11 +84,11 @@ def populate_table(email_body, data_set_dict, client_id):
             else:
                 if j == 0:
                     if data_set_dict['type'] == 'connection':
-                        redirect_url = "https://us-central1-janium0-0.cloudfunctions.net/dte-profile-redirect-function?contactid={}&redirect_url={}&from=connection".format(row[8], str(row[7]))
+                        redirect_url = "https://us-central1-{}.cloudfunctions.net/dte-profile-redirect-function?contact_id={}&redirect_url={}&from=connection".format(PROJECT_ID, row[8], str(row[7]))
                     elif data_set_dict['type'] == 'message':
-                        redirect_url = "https://us-central1-janium0-0.cloudfunctions.net/dte-profile-redirect-function?contactid={}&redirect_url={}&from=message".format(row[9], str(row[8]))
+                        redirect_url = "https://us-central1-{}.cloudfunctions.net/dte-profile-redirect-function?contact_id={}&redirect_url={}&from=message".format(PROJECT_ID, row[9], str(row[8]))
                     else:
-                        redirect_url = "https://us-central1-janium0-0.cloudfunctions.net/dte-profile-redirect-function?contactid={}&redirect_url={}&from=voicemail".format(row[6], str(row[7]))
+                        redirect_url = "https://us-central1-{}.cloudfunctions.net/dte-profile-redirect-function?contact_id={}&redirect_url={}&from=voicemail".format(PROJECT_ID, row[6], str(row[7]))
 
                     td = soup.new_tag("td", **{'class': 'tg-vmfx'})
                     name = soup.new_tag("a", href=redirect_url)
@@ -98,14 +98,14 @@ def populate_table(email_body, data_set_dict, client_id):
                 elif j == 1:
                     if data_set_dict['type'] == 'connection':
                         td = soup.new_tag("td", **{'class': 'tg-vmfx'})
-                        dq_url = "https://us-central1-janium0-0.cloudfunctions.net/dte-dq-contact-function?contactid={}&contact_fullname={}&client_id={}".format(str(row[8]), str(row[0]), client_id)
+                        dq_url = "https://us-central1-{}.cloudfunctions.net/dte-dq-contact-function?contact_id={}&contact_full_name={}&client_id={}".format(PROJECT_ID, str(row[8]), str(row[0]), client_id)
                         dq_button = soup.new_tag("a", href=dq_url, **{'class': 'btn-remove', 'style': 'color:red'})
                         dq_button.string = 'DQ'
                         td.append(dq_button)
                         tr_tag.append(td)
                     elif data_set_dict['type'] == 'message':
                         td = soup.new_tag("td", **{'class': 'tg-vmfx'})
-                        resume_url = "https://us-central1-janium0-0.cloudfunctions.net/dte-resume-campaign-function?activityid={}&contact_fullname={}&contactid={}&client_id={}".format(str(row[10]), str(row[0]), str(row[9]), client_id)
+                        resume_url = "https://us-central1-{}.cloudfunctions.net/dte-resume-campaign-function?activityid={}&contact_full_name={}&contact_id={}&client_id={}".format(PROJECT_ID, str(row[10]), str(row[0]), str(row[9]), client_id)
                         resume_button = soup.new_tag("a", href=resume_url, **{'class': 'btn-continue', 'style': 'color:green'})
                         resume_button.string = 'Continue'
                         td.append(resume_button)
