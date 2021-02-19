@@ -13,22 +13,32 @@ db_host=$STAGING_DB_PUBLIC_HOST
 now=$(date +%s)
 
 # Show tables
-check_alembic=$(mysql -u${db_user} -p${db_pwd} -h ${db_host} -D ${db_db} -e "Select TABLE_NAME from information_schema.tables where TABLE_NAME ='alembic_version';" -s -N)
+check_alembic=$(mysql --login-path=staging -D ${db_db} -e "Select TABLE_NAME from information_schema.tables where TABLE_NAME ='alembic_version';" -s -N)
 if [ "alembic_version" == "$check_alembic" ]; then
     echo "Alembic Version table exists"
 
     # Get current alembic version for staging db
-    alembic_staging_version=$(mysql -u ${db_user} -p${db_pwd} -h ${db_host} -D ${db_db} -e "Select version_num from alembic_version;" -s -N)
+    alembic_staging_version=$(mysql --login-path=staging -D ${db_db} -e "Select version_num from alembic_version;" -s -N)
 
-    # Generate sql migration script
-    sql_migration_script=$(alembic upgrade $alembic_staging_version:$alembic_dev_current --sql)
+    if [ "$alembic_staging_version" == "$alembic_dev_current" ]; then
+        echo "Staging DB already up to date!"
+    else
+        echo "Updating Staging DB to $alembic_dev_current revision"
+
+        # Generate sql migration script
+        sql_migration_script=$(alembic upgrade $alembic_staging_version:$alembic_dev_current --sql)
+
+        # Execute SQL migration script
+        mysql --login-path=staging -D ${db_db} -e "$sql_migration_script"
+    fi
 else
     echo "Alembic Version table does not exist"
 
     # Generate sql migration script
     sql_migration_script=$(alembic upgrade $alembic_dev_current --sql)
+
+    # Execute SQL migration script
+    mysql --login-path=staging -D ${db_db} -e "$sql_migration_script"
 fi
 
-mysql -u ${db_user} -p${db_pwd} -h ${db_host} -D ${db_db} -e "$sql_migration_script"
-
-git checkout staging && git merge dev
+# git checkout staging && git merge dev
