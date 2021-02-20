@@ -181,9 +181,11 @@ def handle_webhook_response(client, webhook_response_id, session):
 
 def main(event, context):
     session = Session()
+    logger.info(event)
 
     pubsub_message = base64.b64decode(event['data']).decode('utf-8')
     payload_json = json.loads(pubsub_message)
+    logger.info(payload_json)
 
     client = session.query(Client).filter(Client.client_id == payload_json['client_id']).first()
     

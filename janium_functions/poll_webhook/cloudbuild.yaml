@@ -1,0 +1,18 @@
+steps:
+  - id: "deploy poll webhook function"
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: ['-c', 'gcloud functions deploy poll-webhook-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-topic=janium-poll-webhook-topic --source=./janium_functions/poll_webhook/poll_webhook_function --entry-point=main --egress-settings=private-ranges-only --vpc-connector=staging-vpc-connector --set-env-vars=PROJECT_ID=foundation-staging-305217,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=staging']
+    secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
+  - id: "deploy poll webhook director"
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: ['-c', 'gcloud functions deploy poll-webhook-director --runtime=python38 --timeout=180 --region=us-central1 --trigger-topic=janium-poll-webhook-director-topic --source=./janium_functions/poll_webhook/poll_webhook_director --entry-point=main --egress-settings=private-ranges-only --vpc-connector=staging-vpc-connector --set-env-vars=PROJECT_ID=foundation-staging-305217,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=staging']
+    secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/foundation-staging-305217/secrets/staging_db_password/versions/latest
+    env: 'DB_PASSWORD_SECRET'
+  - versionName: projects/foundation-staging-305217/secrets/staging_db_private_host/versions/latest
+    env: 'DB_PRIVATE_HOST_SECRET'
