@@ -13,7 +13,10 @@ steps:
 
   - id: "deploy poll webhook function"
     name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
     args:
+      - -c
+      - gcloud
       - functions
       - deploy
       - poll-webhook-function
@@ -27,10 +30,12 @@ steps:
       - --vpc-connector=staging-vpc-connector
       - --set-env-vars=PROJECT_ID=foundation-staging-305217,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=staging
     secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
-
   - id: "deploy poll webhook director"
     name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
     args:
+      - -c
+      - gcloud
       - functions
       - deploy
       - poll-webhook-director
