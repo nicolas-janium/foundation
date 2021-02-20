@@ -42,3 +42,5 @@ else
 fi
 
 git checkout staging && git merge dev && git checkout dev
+
+venv/bin/python3 deploy/staging/model_setup.py
