@@ -20,7 +20,7 @@ if not os.getenv('LOCAL_DEV'):
     logger.addHandler(logHandler)
 else:
     from db.model import *
-    from janium_functions.refresh_ulinc_data.refresh_ulinc_data_function import refresh_ulinc_data_function as function
+    from janium_functions.refresh_ulinc_data.refresh_ulinc_data_function import main as function
 
     logger = logging.getLogger('refresh_ulinc_data')
     logger.setLevel(logging.DEBUG)

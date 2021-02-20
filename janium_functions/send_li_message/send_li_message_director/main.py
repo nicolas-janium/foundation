@@ -21,7 +21,7 @@ if not os.getenv('LOCAL_DEV'):
     logger.addHandler(logHandler)
 else:
     from db.model import *
-    from janium_functions.send_li_message.send_li_message_function import send_li_message_function as function
+    from janium_functions.send_li_message.send_li_message_function import main as function
 
     logger = logging.getLogger('send_li_message_director')
     logger.setLevel(logging.DEBUG)
