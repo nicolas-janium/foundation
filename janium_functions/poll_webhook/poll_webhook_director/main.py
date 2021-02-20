@@ -45,7 +45,7 @@ def main(event, context):
     for client in clients:
         if client.ulinc_config.new_connection_webhook:
             message_json = json.dumps(
-                {"data": {"client_id": client.client_id}}
+                {"client_id": client.client_id}
             )
             message_bytes = message_json.encode('utf-8')
 
