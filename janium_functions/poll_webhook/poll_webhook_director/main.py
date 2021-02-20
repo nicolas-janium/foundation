@@ -20,7 +20,7 @@ if not os.getenv('LOCAL_DEV'):
     logger.addHandler(logHandler)
 else:
     from db.model import *
-    from janium_functions.poll_webhook.poll_webhook_function import poll_webhook_function as function
+    from janium_functions.poll_webhook.poll_webhook_function import main as function
 
     logger = logging.getLogger('poll_webhook_director')
     logger.setLevel(logging.DEBUG)
