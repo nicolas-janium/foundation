@@ -2,7 +2,7 @@ import email
 from datetime import datetime, timedelta
 from uuid import uuid4
 
-from db_model import *
+from model import *
 
 mtn_time = datetime.utcnow() - timedelta(hours=7)
 
