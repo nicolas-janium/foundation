@@ -143,7 +143,7 @@ def handle_webhook_response(client, webhook_response_id, session):
                 if existing_ulinc_campaign:
                     new_contact = create_new_contact(item, client.client_id, existing_ulinc_campaign.parent_janium_campaign.janium_campaign_id, existing_ulinc_campaign.ulinc_campaign_id, webhook_response_id)
                 else:
-                    new_contact = create_new_contact(item, client.client_id, Janium_campaign.unassigned_janium_campaign_id, Ulinc_campaign.unassigned_ulinc_campaign_id,, webhook_response_id)
+                    new_contact = create_new_contact(item, client.client_id, Janium_campaign.unassigned_janium_campaign_id, Ulinc_campaign.unassigned_ulinc_campaign_id, webhook_response_id)
                 session.add(new_contact)
                 contact_id = new_contact.contact_id
 
