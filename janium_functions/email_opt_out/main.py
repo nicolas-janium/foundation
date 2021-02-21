@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timedelta
 from uuid import uuid4
+import logging
 
 if not os.getenv('LOCAL_DEV'):
     from model import *
