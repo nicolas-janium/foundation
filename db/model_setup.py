@@ -102,12 +102,12 @@ def add_unassigned_records(session):
     session.add(unassigned_client)
 
     unassigned_janium_campaign = Janium_campaign(
-        '9d6c1500-233f-42e2-9e02-725a22c831dc', unassigned_client.client_id, unassigned_email_config.email_config_id, 'Unassigned Janium Campaign Name', 'Description', False, False
+        Janium_campaign.unassigned_janium_campaign_id, unassigned_client.client_id, unassigned_email_config.email_config_id, 'Unassigned Janium Campaign Name', 'Description', False, False
     )
     session.add(unassigned_janium_campaign)
 
     unassigned_ulinc_campaign = Ulinc_campaign(
-        'f8755a34-676a-4083-a4ce-ff9e861e6940',
+        Ulinc_campaign.unassigned_ulinc_campaign_id,
         unassigned_client.client_id,
         unassigned_janium_campaign.janium_campaign_id,
         'Unassigned Ulinc Campaign Name',

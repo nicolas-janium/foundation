@@ -1,47 +1,28 @@
 import os
 from datetime import datetime, timedelta
 
-import google.auth
-from google.cloud import secretmanager
-from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Integer, String,
-                        Text, create_engine, engine, Computed, JSON)
+from sqlalchemy import (JSON, Boolean, Column, Computed, DateTime, ForeignKey,
+                        Integer, String, Text, create_engine, engine)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker, backref
-from sqlalchemy.sql import func, false, text, true
+from sqlalchemy.orm import backref, relationship, sessionmaker
+from sqlalchemy.sql import false, func, text, true
 
-
-def get_mysql_info():
-    creds, project = google.auth.default()
-    client = secretmanager.SecretManagerServiceClient(credentials=creds)
-    project_id = "janium0-0"
-
-    pass_secret_name = "gcf-mysql-password"
-    pass_request = {"name": f"projects/{project_id}/secrets/{pass_secret_name}/versions/latest"}
-    pass_response = client.access_secret_version(pass_request)
-
-    host_secret_name = "janium-mysql-master-private-ip"
-    host_request = {"name": f"projects/{project_id}/secrets/{host_secret_name}/versions/latest"}
-    host_response = client.access_secret_version(host_request)
-
-    return (pass_response.payload.data.decode('UTF-8'), host_response.payload.data.decode('UTF-8'))
-
-if os.getenv('IS_CLOUD'):
-    pwd, host = get_mysql_info()
+if not os.getenv('LOCAL_DEV'):
     db_url = engine.url.URL(
-        drivername=os.getenv('DRIVER_NAME'),
+        drivername='mysql+pymysql',
         username= os.getenv('DB_USER'),
-        password= pwd,
-        database= os.getenv('DB_NAME'),
-        host= host
+        password= os.getenv('DB_PASSWORD'),
+        database= os.getenv('DB_DATABASE'),
+        host= os.getenv('DB_PRIVATE_HOST')
     )
 else:
     db_url = engine.url.URL(
-        drivername=os.getenv('DRIVER_NAME'),
-        username= os.getenv('DB_USER'),
-        password= os.getenv('DB_PASSWORD'),
-        database= os.getenv('DB_NAME'),
-        host= os.getenv('DB_HOST'),
-        port= os.getenv('DB_PORT')
+        drivername='mysql+pymysql',
+        username= os.getenv('LOCAL_DB_USER'),
+        password= os.getenv('LOCAL_DB_PASSWORD'),
+        database= os.getenv('LOCAL_DB_DATABASE'),
+        host= os.getenv('LOCAL_DB_HOST'),
+        port= os.getenv('LOCAL_DB_PORT')
     )
 
 engine = create_engine(db_url)
@@ -196,6 +177,7 @@ class Client_group_manager(Base):
 
 class Janium_campaign(Base):
     __tablename__ = 'janium_campaign'
+    unassigned_janium_campaign_id = '65c96bb2-0c32-4858-a913-ca0cd902f1fe'
 
     def __init__(self, janium_campaign_id, client_id, email_config_id, janium_campaign_name, janium_campaign_description, is_active, is_messenger):
         self.janium_campaign_id = janium_campaign_id
@@ -298,6 +280,7 @@ class Janium_campaign_step_type(Base):
 
 class Ulinc_campaign(Base):
     __tablename__ = 'ulinc_campaign'
+    unassigned_ulinc_campaign_id = '943c18f3-74c8-45cf-a396-1ddc89c6b9d2'
 
     def __init__(self, ulinc_campaign_id, client_id, janium_campaign_id, ulinc_campaign_name, ulinc_is_active, ulinc_ulinc_campaign_id, ulinc_is_messenger, ulinc_messenger_origin_message):
         self.ulinc_campaign_id = ulinc_campaign_id
@@ -581,7 +564,7 @@ class Dte(Base):
 class Email_config(Base):
     __tablename__ = 'email_config'
     janium_email_config_id = '709f79b3-7a20-43ff-844a-4f014fa4e406'
-    unassigned_email_config = '7c5c4aa2-2c6e-4e3d-947e-6efdae4366a1'
+    unassigned_email_config_id = '7c5c4aa2-2c6e-4e3d-947e-6efdae4366a1'
 
     def __init__(self, email_config_id, credentials_id, email_server_id, is_sendgrid, sendgrid_sender_id):
         self.email_config_id = email_config_id
@@ -649,7 +632,7 @@ class Email_server(Base):
 
 class Ulinc_config(Base):
     __tablename__ = 'ulinc_config'
-    unassigned_ulinc_config = 'dff0e400-b338-4bc5-bb99-617bade305bd'
+    unassigned_ulinc_config_id = 'dff0e400-b338-4bc5-bb99-617bade305bd'
 
     def __init__(self, ulinc_config_id, credentials_id, cookie_id, client_ulinc_id, new_connection_webhook, new_message_webhook, send_message_webhook):
         self.ulinc_config_id = ulinc_config_id
@@ -715,6 +698,7 @@ class Credentials(Base):
 
 class Cookie(Base):
     __tablename__ = 'cookie'
+    unassigned_cookie_id = 'dd0dfdaa-3d58-4d96-85dc-cd68307f528d'
 
     def __init__(self, cookie_id, cookie_type_id, cookie_json_value):
         self.cookie_id = cookie_id

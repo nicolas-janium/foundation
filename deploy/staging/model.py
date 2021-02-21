@@ -167,6 +167,7 @@ class Client_group_manager(Base):
 
 class Janium_campaign(Base):
     __tablename__ = 'janium_campaign'
+    unassigned_janium_campaign_id = '65c96bb2-0c32-4858-a913-ca0cd902f1fe'
 
     def __init__(self, janium_campaign_id, client_id, email_config_id, janium_campaign_name, janium_campaign_description, is_active, is_messenger):
         self.janium_campaign_id = janium_campaign_id
@@ -269,6 +270,7 @@ class Janium_campaign_step_type(Base):
 
 class Ulinc_campaign(Base):
     __tablename__ = 'ulinc_campaign'
+    unassigned_ulinc_campaign_id = '943c18f3-74c8-45cf-a396-1ddc89c6b9d2'
 
     def __init__(self, ulinc_campaign_id, client_id, janium_campaign_id, ulinc_campaign_name, ulinc_is_active, ulinc_ulinc_campaign_id, ulinc_is_messenger, ulinc_messenger_origin_message):
         self.ulinc_campaign_id = ulinc_campaign_id
