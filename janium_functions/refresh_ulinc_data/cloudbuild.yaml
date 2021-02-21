@@ -16,4 +16,4 @@ availableSecrets:
   - versionName: projects/foundation-staging-305217/secrets/staging_db_password/versions/latest
     env: 'DB_PASSWORD_SECRET'
   - versionName: projects/foundation-staging-305217/secrets/staging_db_private_host/versions/latest
-    env: 'DB_PRIVATE_HOST_SECRET'
+    env: 'DB_PRIVATE_HOST_SECRET' 
