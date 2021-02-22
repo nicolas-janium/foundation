@@ -1,0 +1,31 @@
+steps:
+  - id: "deploy email-opt-out"
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: ['-c', 'gcloud functions deploy email-opt-out-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-http --allow-unauthenticated --source=./janium_functions/email_opt_out --entry-point=main --egress-settings=private-ranges-only --vpc-connector=staging-vpc-connector --set-env-vars=PROJECT_ID=foundation-staging-305217,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=staging']
+    secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
+
+  - id: "deploy dte-resume-campaign"
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: ['-c', 'gcloud functions deploy dte-resume-campaign-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-http --allow-unauthenticated --source=./janium_functions/dte_resume_campaign --entry-point=main --egress-settings=private-ranges-only --vpc-connector=staging-vpc-connector --set-env-vars=PROJECT_ID=foundation-staging-305217,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=staging']
+    secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
+
+  - id: "deploy dte-profile-redirect"
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: ['-c', 'gcloud functions deploy dte-profile-redirect-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-http --allow-unauthenticated --source=./janium_functions/dte_profile_redirect --entry-point=main --egress-settings=private-ranges-only --vpc-connector=staging-vpc-connector --set-env-vars=PROJECT_ID=foundation-staging-305217,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=staging']
+    secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
+  
+  - id: "deploy dte-dq-contact"
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: ['-c', 'gcloud functions deploy dte-dq-contact-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-http --allow-unauthenticated --source=./janium_functions/dte_dq_contact --entry-point=main --egress-settings=private-ranges-only --vpc-connector=staging-vpc-connector --set-env-vars=PROJECT_ID=foundation-staging-305217,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=staging']
+    secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/foundation-staging-305217/secrets/staging_db_password/versions/latest
+    env: 'DB_PASSWORD_SECRET'
+  - versionName: projects/foundation-staging-305217/secrets/staging_db_private_host/versions/latest
+    env: 'DB_PRIVATE_HOST_SECRET'

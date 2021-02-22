@@ -1,0 +1,19 @@
+steps:
+  - id: "deploy read-email-inbox-function"
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: ['-c', 'gcloud functions deploy read-email-inbox-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-topic=janium-read-email-inbox-topic --source=./janium_functions/read_email_inbox/read_email_inbox_function --entry-point=main --egress-settings=private-ranges-only --vpc-connector=prod-vpc-connector --set-env-vars=PROJECT_ID=foundation-production,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=prod']
+    secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
+
+  - id: "deploy read-email-inbox-director"
+    name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: ['-c', 'gcloud functions deploy read-email-inbox-director-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-topic=janium-read-email-inbox-director-topic --source=./janium_functions/read_email_inbox/read_email_inbox_director --entry-point=main --egress-settings=private-ranges-only --vpc-connector=prod-vpc-connector --set-env-vars=PROJECT_ID=foundation-production,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=prod']
+    secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/foundation-production/secrets/prod_db_password/versions/latest
+    env: 'DB_PASSWORD_SECRET'
+  - versionName: projects/foundation-production/secrets/prod_db_private_host/versions/latest
+    env: 'DB_PRIVATE_HOST_SECRET'
