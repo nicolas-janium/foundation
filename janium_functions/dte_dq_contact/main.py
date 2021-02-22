@@ -45,7 +45,7 @@ def main(request):
         session.add(new_action)  # pylint: disable=no-member
         session.commit()  # pylint: disable=no-member
 
-        if client.ulinc_config.cookie_id != Cookie.dummy_cookie_id:
+        if client.ulinc_config.cookie_id != Cookie.unassigned_cookie_id:
             session2 = requests.Session()
             jar = requests.cookies.RequestsCookieJar()
             jar.set('usr', client.ulinc_config.cookie.cookie_json_value['usr'])
