@@ -32,7 +32,7 @@ def main(request):
     args = request.args
     profile_url = args['redirect_url']
     contact_id = args['contact_id']
-    source = args['source']
+    source = args['from']
 
     session = Session()
 
