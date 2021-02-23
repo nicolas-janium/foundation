@@ -8,7 +8,7 @@ import subprocess
 import mock
 
 from db.model import *
-from db import model_setup
+from db import local_db_setup
 from janium_functions.read_email_inbox.read_email_inbox_function import read_email_inbox_function
 
 

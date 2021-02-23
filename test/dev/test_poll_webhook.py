@@ -8,7 +8,7 @@ import subprocess
 import mock
 
 from db.model import *
-from db import model_setup
+from db import local_db_setup
 
 from janium_functions.poll_webhook.poll_webhook_director import poll_webhook_director as director
 from janium_functions.poll_webhook.poll_webhook_function import poll_webhook_function as function

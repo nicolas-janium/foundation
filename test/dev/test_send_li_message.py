@@ -10,7 +10,7 @@ import urllib3
 import mock
 
 from db.model import *
-from db import model_setup
+from db import local_db_setup
 
 from janium_functions.send_li_message.send_li_message_director import send_li_message_director as director
 from janium_functions.send_li_message.send_li_message_function import send_li_message_function as function

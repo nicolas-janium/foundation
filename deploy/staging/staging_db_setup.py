@@ -1,10 +1,12 @@
-from deploy.staging.model import *
-from deploy.staging.model_types import *
+# from deploy.staging.model import *
+# from deploy.staging.model_types import *
 import json
 from uuid import uuid4
 import os
 from datetime import datetime, timedelta
 from workdays import networkdays, workday
+from db.model import *
+from db.model_types import *
 
 mtn_time = datetime.utcnow() - timedelta(hours=7)
 
@@ -408,7 +410,7 @@ def reset_db(session):
     session.commit()
 
 def main():
-    session = Session()
+    session = get_session(is_remote=True, environment='staging')
 
     # Insert defaults and types
     insert_types(session)

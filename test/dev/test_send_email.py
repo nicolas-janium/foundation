@@ -8,7 +8,7 @@ import subprocess
 import mock
 
 from db.model import *
-from db import model_setup
+from db import local_db_setup
 
 from janium_functions.send_email.send_email_director import send_email_director as director
 from janium_functions.send_email.send_email_function import send_email_function as function

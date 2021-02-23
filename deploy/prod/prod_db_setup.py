@@ -160,7 +160,7 @@ def add_janium_records(session):
     session.commit()
 
 def main():
-    session = Session()
+    session = get_session(is_remote=True, environment='production')
 
     # Insert defaults and types
     insert_types(session)

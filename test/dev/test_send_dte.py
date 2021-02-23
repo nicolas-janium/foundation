@@ -9,7 +9,7 @@ import mock
 import pytest
 
 from db.model import *
-from db import model_setup
+from db import local_db_setup
 
 from janium_functions.send_dte.send_dte_director import send_dte_director as director
 from janium_functions.send_dte.send_dte_function import send_dte_function as function

@@ -7,27 +7,47 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.sql import false, func, text, true
 
-if not os.getenv('LOCAL_DEV'):
-    db_url = engine.url.URL(
-        drivername='mysql+pymysql',
-        username= os.getenv('DB_USER'),
-        password= os.getenv('DB_PASSWORD'),
-        database= os.getenv('DB_DATABASE'),
-        host= os.getenv('DB_PRIVATE_HOST')
-    )
-else:
-    db_url = engine.url.URL(
-        drivername='mysql+pymysql',
-        username= os.getenv('LOCAL_DB_USER'),
-        password= os.getenv('LOCAL_DB_PASSWORD'),
-        database= os.getenv('LOCAL_DB_DATABASE'),
-        host= os.getenv('LOCAL_DB_HOST'),
-        port= os.getenv('LOCAL_DB_PORT')
-    )
-
-engine = create_engine(db_url)
 Base = declarative_base()
-Session = sessionmaker(bind=engine)
+
+def get_session(is_remote=False, environment=None):
+    if not os.getenv('LOCAL_DEV'):
+        db_url = engine.url.URL(
+            drivername='mysql+pymysql',
+            username= os.getenv('DB_USER'),
+            password= os.getenv('DB_PASSWORD'),
+            database= os.getenv('DB_DATABASE'),
+            host= os.getenv('DB_PRIVATE_HOST')
+        )
+    else:
+        if is_remote:
+            if environment == 'staging':
+                db_url = engine.url.URL(
+                    drivername='mysql+pymysql',
+                    username= os.getenv('STAGING_DB_USER'),
+                    password= os.getenv('STAGING_DB_PASSWORD'),
+                    database= os.getenv('STAGING_DB_DATABASE'),
+                    host= os.getenv('STAGING_DB_PUBLIC_HOST'),
+                )
+            elif environment == 'production':
+                db_url = engine.url.URL(
+                    drivername='mysql+pymysql',
+                    username= os.getenv('PROD_DB_USER'),
+                    password= os.getenv('PROD_DB_PASSWORD'),
+                    database= os.getenv('PROD_DB_DATABASE'),
+                    host= os.getenv('PROD_DB_PUBLIC_HOST'),
+                )
+        else:
+            db_url = engine.url.URL(
+                drivername='mysql+pymysql',
+                username= os.getenv('LOCAL_DB_USER'),
+                password= os.getenv('LOCAL_DB_PASSWORD'),
+                database= os.getenv('LOCAL_DB_DATABASE'),
+                host= os.getenv('LOCAL_DB_HOST'),
+                port= os.getenv('LOCAL_DB_PORT')
+            )
+    sql_engine = create_engine(db_url)
+    return sessionmaker(bind=sql_engine)()
+
 
 class Client(Base):
     __tablename__ = 'client'
@@ -671,6 +691,7 @@ class Ulinc_config(Base):
 class Credentials(Base):
     __tablename__ = 'credentials'
     janium_email_app_credentials_id = 'a217fb95-0a28-49ba-a18a-a0298d0b68b3'
+    unassigned_credentials_id = '264f534f-d36e-4c3c-9614-9760f47ee0e3'
 
     def __init__(self, credentials_id, username, password):
         self.credentials_id = credentials_id
