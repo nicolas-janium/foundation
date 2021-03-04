@@ -30,7 +30,7 @@ credentials = table('credentials',
 cookie = table('cookie',
     column('cookie_id', String),
     column('cookie_type_id', Integer),
-    column('cookie_json_value', JSON)
+    column('cookie_json_value', String)
 )
 ulinc_config = table('ulinc_config',
     column('ulinc_config_id', String),
