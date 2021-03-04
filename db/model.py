@@ -51,6 +51,7 @@ def get_session(is_remote=False, environment=None):
 
 class Client(Base):
     __tablename__ = 'client'
+    unassigned_client_id = 'a77a723d-09ea-4282-8c96-9be09937dc69'
 
     def __init__(self, client_id, client_group_id, ulinc_config_id, email_config_id, is_active, is_sending_emails, is_sending_li_messages,
                        is_dte, is_assistant, first_name, last_name, title, company, location, primary_email, campaign_management_email,
@@ -129,6 +130,7 @@ class Client(Base):
 class Client_group(Base):
     __tablename__ = 'client_group'
     janium_client_group_id = '02131075-e537-40c6-bdac-5ccf56fa9705'
+    unassigned_client_group_id = '3bd4feab-1013-4d66-9bba-728738eb8802'
 
     def __init__(self, client_group_id, client_group_manager_id, dte_id, dte_sender_id, name, description, is_active):
         self.client_group_id = client_group_id
@@ -169,6 +171,7 @@ class Client_group(Base):
 class Client_group_manager(Base):
     __tablename__ = 'client_group_manager'
     janium_client_group_manager_id = 'cf2c5ddc-eaba-4db1-adfd-03b133c2213b'
+    unassigned_client_group_manager_id = 'f0a50859-455a-448b-a6e0-64fb4f6c5416'
 
     def __init__(self, client_group_manager_id, first_name, last_name):
         self.client_group_manager_id = client_group_manager_id
@@ -375,13 +378,16 @@ class Contact(Base):
     ulinc_id = Column(String(20), nullable=False)
     ulinc_ulinc_campaign_id = Column(String(20), nullable=False)
     first_name = Column(String(100), nullable=False)
+    scrubbed_first_name = Column(String(100), nullable=True)
     last_name = Column(String(100), nullable=False)
     full_name = Column(String(200), Computed("CONCAT(first_name, ' ', last_name)"))
     title = Column(String(250), nullable=True)
     company = Column(String(250), nullable=True)
+    scrubbed_company = Column(String(250), nullable=True)
     location = Column(String(250), nullable=True)
-    email1 = Column(String(250), nullable=True)
-    email2 = Column(String(250), nullable=True)
+    scrubbed_location = Column(String(250), nullable=True)
+    email1 = Column(String(250), nullable=True) # Personal Email
+    email2 = Column(String(250), nullable=True) # Business Email
     email3 = Column(String(250), nullable=True)
     phone = Column(String(250), nullable=True)
     website = Column(String(250), nullable=True)
@@ -520,6 +526,7 @@ class Webhook_response_type(Base):
 class Dte_sender(Base):
     __tablename__ = 'dte_sender'
     janium_dte_sender_id = '5202aea8-ab36-4e6d-9cda-5994d2c0bbe1'
+    unassigned_dte_sender_id = 'd07a45e1-8baa-4593-ae54-452697e7f559'
 
     def __init__(self, dte_sender_id, email_config_id, first_name, last_name):
         self.dte_sender_id = dte_sender_id
@@ -552,6 +559,7 @@ class Dte_sender(Base):
 class Dte(Base):
     __tablename__ = 'dte'
     janium_dte_id = '38429485-59e1-4eeb-a4bb-05696ead8e49'
+    unassigned_dte_id = 'e18bd1b0-b404-41ac-a5e4-bcb112ced90d'
 
     def __init__(self, dte_id, name, description, subject, body):
         self.dte_id = dte_id

@@ -5,7 +5,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from db.model import Base, db_url
+from db.model import Base
 
 db_url = 'mysql+pymysql://{}:{}@{}:{}/{}'.format(os.getenv('LOCAL_DB_USER'), os.getenv('LOCAL_DB_PASSWORD'), os.getenv('LOCAL_DB_HOST'), os.getenv('LOCAL_DB_PORT'), os.getenv('LOCAL_DB_DATABASE'))
 
