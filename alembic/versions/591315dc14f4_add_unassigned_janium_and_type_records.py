@@ -8,7 +8,8 @@ Create Date: 2021-02-22 14:18:58.661972
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.sql import table, column
-from sqlalchemy import String, JSON, Boolean, Text, Integer
+from sqlalchemy import String, Boolean, Text, Integer
+from sqlalchemy.types import JSON
 # from db import model, model_types
 from db import model
 import os
@@ -203,7 +204,7 @@ def upgrade():
             cookie_id=model.Cookie.unassigned_cookie_id,
             cookie_type_id=1,
             # cookie_json_value=json.dumps({'usr': '123', 'pwd': '123'})
-            cookie_json_value={"usr": "123", "pwd": "123"}
+            cookie_json_value = {"usr": "123", "pwd": "123"}
         )
     )
     op.execute(
