@@ -170,7 +170,8 @@ def send_email(details, session):
     main_email['MIME-Version'] = '1.0'
 
     # email_html = add_tracker(details['email_body'], contactid, messageid)
-    email_html = add_footer(details['email_body'], contact_id, details['contact_email'])
+    # email_html = add_footer(details['email_body'], contact_id, details['contact_email'])
+    email_html = details['email_body']
     email_html = email_html.replace(r"{FirstName}", details['contact_first_name'])
 
     main_email.add_alternative(html2text(email_html), 'plain')
