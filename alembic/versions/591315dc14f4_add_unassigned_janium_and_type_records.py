@@ -7,7 +7,7 @@ Create Date: 2021-02-22 14:18:58.661972
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.sql import table, column
+from sqlalchemy.sql import table, column, null
 from sqlalchemy import String, Boolean, Text, Integer
 from sqlalchemy.types import JSON
 # from db import model, model_types
@@ -224,7 +224,7 @@ def upgrade():
             credentials_id=model.Credentials.unassigned_credentials_id,
             email_server_id='f9cf23f6-231c-4210-90f3-7749873909ad',
             is_sendgrid=False,
-            sendgrid_sender_id=None
+            sendgrid_sender_id=null()
         )
     )
     op.execute(
