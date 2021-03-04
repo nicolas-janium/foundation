@@ -12,6 +12,7 @@ from sqlalchemy import String, JSON, Boolean, Text, Integer
 # from db import model, model_types
 from db import model
 import os
+import json
 
 
 # revision identifiers, used by Alembic.
@@ -27,7 +28,7 @@ credentials = table('credentials',
 )
 cookie = table('cookie',
     column('cookie_id', String),
-    column('cookie_type_id', String),
+    column('cookie_type_id', Integer),
     column('cookie_json_value', JSON)
 )
 ulinc_config = table('ulinc_config',
@@ -201,7 +202,7 @@ def upgrade():
         cookie.insert().values(
             cookie_id=model.Cookie.unassigned_cookie_id,
             cookie_type_id=1,
-            cookie_json_value={'usr': '123', 'pwd': '123'}
+            cookie_json_value=json.dumps({'usr': '123', 'pwd': '123'})
         )
     )
     op.execute(

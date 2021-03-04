@@ -412,20 +412,20 @@ def reset_db(session):
 def main():
     session = get_session(is_remote=True, environment='staging')
 
-    # Insert defaults and types
-    insert_types(session)
+    # # Insert defaults and types
+    # insert_types(session)
 
     # Reset db
     reset_db(session)
 
-    # Add unassigned records
-    add_unassigned_records(session)
+    # # Add unassigned records
+    # add_unassigned_records(session)
 
-    # Add janium records
-    add_janium_records(session)
+    # # Add janium records
+    # add_janium_records(session)
 
-    # Add jonny records
-    add_jonny_records(session)
+    # # Add jonny records
+    # add_jonny_records(session)
 
 
 if __name__ == '__main__':
