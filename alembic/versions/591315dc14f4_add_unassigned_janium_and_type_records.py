@@ -202,7 +202,8 @@ def upgrade():
         cookie.insert().values(
             cookie_id=model.Cookie.unassigned_cookie_id,
             cookie_type_id=1,
-            cookie_json_value=json.dumps({'usr': '123', 'pwd': '123'})
+            # cookie_json_value=json.dumps({'usr': '123', 'pwd': '123'})
+            cookie_json_value={"usr": "123", "pwd": "123"}
         )
     )
     op.execute(
