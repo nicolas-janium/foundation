@@ -98,9 +98,14 @@ def handle_webhook_response(client, webhook_response_id, session):
         existing_ulinc_campaign = session.query(Ulinc_campaign).filter(Ulinc_campaign.client_id == client.client_id).filter(Ulinc_campaign.ulinc_ulinc_campaign_id == str(item['campaign_id'])).first()
         if webhook_response.webhook_response_type_id == webhook_response_type_dict['ulinc_new_connection']['id']:
             if existing_contact: # if contact exists in the contact table
-                if len([action for action in existing_contact.actions if action.action_type_id == webhook_response_type_dict['ulinc_new_connection']['id']]) > 0:
+                # if len([action for action in existing_contact.actions if action.action_type_id == action_type_dict['ulinc_new_connection']['id']]) > 0:
+                if existing_cnxn_action := existing_contact.actions.filter(Action.action_type_id == 1).first():
                     pass
                 else:
+                    existing_contact.email1 = item['email']
+                    existing_contact.phone = item['phone']
+                    existing_contact.website = item['website']
+                    existing_contact.li_profile_url = item['profile']
                     connection_action = Action(str(uuid4()), existing_contact.contact_id, webhook_response_type_dict['ulinc_new_connection']['id'], None, None)
                     session.add(connection_action)
             else:

@@ -239,7 +239,7 @@ def main(event, context):
     pubsub_message = base64.b64decode(event['data']).decode('utf-8')
     payload_json = json.loads(pubsub_message)
 
-    session = Session()
+    session = get_session()
     client = session.query(Client).filter(Client.client_id == payload_json['client_id']).first()
 
     is_sendgrid = True if client.email_config.is_sendgrid and client.email_config.sendgrid_sender_id else False
