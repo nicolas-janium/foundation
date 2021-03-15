@@ -92,7 +92,7 @@ class Account(Base):
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
-    users = relationship('User_account_xref', back_populates='account') 
+    users = relationship('User_account_map', back_populates='account') 
     janium_campaigns = relationship('Janium_campaign', backref=backref('janium_campaign_account', uselist=False), uselist=True, lazy='dynamic')
     ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('ulinc_campaign_account', uselist=False), uselist=True, lazy='dynamic')
     contacts = relationship('Contact', backref=backref('contact_account', uselist=False), uselist=True, lazy='dynamic')
@@ -114,7 +114,8 @@ class Account_type(Base):
 
 class User(Base):
     __tablename__ = 'user'
-    unassigned_user_id = '46b5adbe-bf4d-4fc9-a99f-4b2e929e0dba'
+    unassigned_user_id = '9d34bb21-7037-4709-bb0f-e1e8b1491506'
+    system_user_id = 'a0bcc7a2-5e2b-41c6-9d5c-ba8ebb01c03d'
 
     def __init__(self, user_id, first_name, title, company, location, primary_email, campaign_management_email, alternate_dte_email, phone):
         self.user_id = user_id
@@ -129,6 +130,7 @@ class User(Base):
         self.phone = phone
     
     user_id = Column(String(36), primary_key=True)
+
     first_name = Column(String(126), nullable=False)
     last_name = Column(String(126), nullable=False)
     full_name = Column(String(256), Computed("CONCAT(first_name, ' ', last_name)"))
@@ -136,53 +138,68 @@ class User(Base):
     company = Column(String(256), nullable=True)
     location = Column(String(256), nullable=True)
     primary_email = Column(String(256), nullable=False)
-    campaign_management_email = Column(String(256), nullable=True)
-    alternate_dte_email = Column(String(256), nullable=True)
     phone = Column(String(256), nullable=True)
+    additional_contact_info = Column(JSON, nullable=True)
 
     asOfStartTime = Column(DateTime, server_default=func.now())
     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    effective_start_date = Column(DateTime, server_default=func.now())
-    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
-    accounts = relationship('User_account_xref', back_populates='account_user')
-    user_types = relationship('User_type_xref', back_populates='user')
+    accounts = relationship('User_account_map', back_populates='account_user')
+    permissions = relationship('User_permission_map', back_populates='permission_user')
 
-class User_type(Base):
-    __tablename__ = 'user_type'
+# class User_type(Base):
+#     __tablename__ = 'user_type'
 
-    def __init__(self, user_type_id, user_type_name, user_type_description):
-        self.user_type_id = user_type_id
-        self.user_type_name = user_type_name
-        self.user_type_description = user_type_description
+#     def __init__(self, user_type_id, user_type_name, user_type_description):
+#         self.user_type_id = user_type_id
+#         self.user_type_name = user_type_name
+#         self.user_type_description = user_type_description
     
-    user_type_id = Column(Integer, primary_key=True, nullable=False)
-    user_type_name = Column(String(128), nullable=False)
-    user_type_description = Column(String(256), nullable=False)
+#     user_type_id = Column(Integer, primary_key=True, nullable=False)
+#     user_type_name = Column(String(128), nullable=False)
+#     user_type_description = Column(String(256), nullable=False)
 
-    date_added = Column(DateTime, server_default=func.now())
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+#     date_added = Column(DateTime, server_default=func.now())
 
-    users = relationship('User_type_xref', back_populates='user_type')
+#     users = relationship('User_type_xref', back_populates='user_type')
 
 
-class User_type_xref(Base):
-    __tablename__ = 'user_type_xref'
+# class User_type_xref(Base):
+#     __tablename__ = 'user_type_xref'
 
-    def __init__(self, user_id, user_type_id):
+#     def __init__(self, user_id, user_type_id):
+#         self.user_id = user_id
+#         self.user_type_id = user_type_id
+    
+#     user_id = Column(String(36), ForeignKey('user.user_id'), primary_key=True, nullable=False)
+#     user_type_id = Column(Integer, ForeignKey('user_type.user_type_id'), primary_key=True, nullable=False)
+
+#     user = relationship('User', back_populates='user_types')
+#     user_type = relationship('User_type', back_populates='users')
+
+
+class User_account_map(Base):
+    __tablename__ = 'user_account_map'
+
+    def __init__(self, user_id, account_id):
         self.user_id = user_id
-        self.user_type_id = user_type_id
+        self.account_id = account_id
     
     user_id = Column(String(36), ForeignKey('user.user_id'), primary_key=True, nullable=False)
-    user_type_id = Column(Integer, ForeignKey('user_type.user_type_id'), primary_key=True, nullable=False)
+    account_id = Column(String(36), ForeignKey('account.account_id'), primary_key=True, nullable=False)
+    permission_id = Column(String(36), ForeignKey('permission.permission_id'), primary_key=True, nullable=False)
 
-    user = relationship('User', back_populates='user_types')
-    user_type = relationship('User_type', back_populates='users')
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+
+    user = relationship('User', back_populates='accounts')
+    account = relationship('Account', back_populates='users')
 
 
-class User_account_xref(Base):
-    __tablename__ = 'user_account_xref'
+class User_proxy_map(Base):
+    __tablename__ = 'user_proxy_map'
 
     def __init__(self, user_id, account_id):
         self.user_id = user_id
@@ -191,8 +208,65 @@ class User_account_xref(Base):
     user_id = Column(String(36), ForeignKey('user.user_id'), primary_key=True, nullable=False)
     account_id = Column(String(36), ForeignKey('account.account_id'), primary_key=True, nullable=False)
 
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+
     user = relationship('User', back_populates='accounts')
     account = relationship('Account', back_populates='users')
+
+class User_permission_map(Base):
+    __tablename__ = 'user_permission_map'
+
+    def __init__(self, user_id, permission_id):
+        self.user_id = user_id
+        self.permission_id = permission_id
+    
+    user_id = Column(String(36), ForeignKey('user.user_id'), primary_key=True, nullable=False)
+    permission_id = Column(String(36), ForeignKey('permission.permission_id'), primary_key=True, nullable=False)
+
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+
+    user = relationship('User', back_populates='accounts')
+    permission = relationship('Permission', back_populates='users')
+
+class Permission(Base):
+    __tablename__ = 'permission'
+
+    def __init__(self, permission_id, permission_name, permission_description):
+        self.permission_id = permission_id
+        self.permission_name = permission_name
+        self.permission_description = permission_description
+    
+    permission_id = Column(String(36), primary_key=True, nullable=False)
+    permission_name = Column(String(64), nullable=False)
+    permission_description = Column(String(512), nullable=False)
+
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+
+    users = relationship('User_permission_map', back_populates='permission_user')
+
+class Login_credential(Base):
+    __tablename__ = 'login_credential'
+
+    def __init__(self, login_credential_id, user_id, login_credential):
+        self.login_credential_id = login_credential_id
+        self.user_id = user_id
+        self.login_credential = login_credential
+    
+    login_credential_id = Column(String(36), primary_key=True, nullable=False)
+    
+    user_id = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+    login_credential = Column(String(45), nullable=False)
+
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+
 
 
 class Account_group(Base):
@@ -213,13 +287,13 @@ class Account_group(Base):
     account_group_id = Column(String(36), primary_key=True, nullable=False)
 
     # Foreign Keys
-    account_group_manager_id = Column(String(36), ForeignKey('user.user_id'))
+    account_group_manager_id = Column(String(36), ForeignKey('user.user_id'), nullable=False)
     dte_id = Column(String(36), ForeignKey('dte.dte_id'))
-    dte_sender_id = Column(String(36), ForeignKey('dte_sender.dte_sender_id'))
+    dte_sender_id = Column(String(36), ForeignKey('dte_sender.dte_sender_id'), nullable=False)
 
     # Common Columns
-    account_group_name = Column(String(250), nullable=False)
-    account_group_description = Column(String(1000), nullable=True)
+    account_group_name = Column(String(128), nullable=False)
+    account_group_description = Column(String(256), nullable=True)
     # is_active = Column(Boolean, nullable=False, server_default=false())
 
     # Table Metadata
@@ -234,6 +308,20 @@ class Account_group(Base):
     # account_group_manager = relationship('Account_group_manager', backref=backref('account_groups', uselist=True), uselist=False, lazy=True)
     dte = relationship('Dte', uselist=False, lazy=True)
     dte_sender = relationship('Dte_sender', uselist=False, lazy=True)
+
+class User_account_group_map(Base):
+    __tablename__ = 'user_account_group_map'
+
+    def __init(self, user_id, account_group_id):
+        self.user_id = user_id
+        self.account_group_id = account_group_id
+    
+    user_id = Column(String(36), ForeignKey('user.user_id'), primary_key=True, nullable=False)
+    account_group_id = Column(String(36), ForeignKey('account_group.account_group_id'), primary_key=True, nullable=False)
+
+    asOfStartTime = Column(DateTime, server_default=func.now())
+    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
 # class Account_group_manager(Base):
 #     __tablename__ = 'account_group_manager'
@@ -279,11 +367,11 @@ class Janium_campaign(Base):
         self.is_messenger = is_messenger
 
     # Primary Keys
-    janium_campaign_id = Column(String(36), primary_key=True)
+    janium_campaign_id = Column(String(36), primary_key=True, nullable=False)
 
     # Foreign Keys
-    account_id = Column(String(36), ForeignKey('account.account_id'))
-    email_config_id = Column(String(36), ForeignKey('email_config.email_config_id')) # Insert dummy value if using account email_config
+    account_id = Column(String(36), ForeignKey('account.account_id'), nullable=False)
+    email_config_id = Column(String(36), ForeignKey('email_config.email_config_id'), nullable=False) # Insert dummy value if using account email_config
 
     # Common Columns
     janium_campaign_name = Column(String(512), nullable=False)
@@ -364,7 +452,6 @@ class Janium_campaign_step_type(Base):
 
     # Table Metadata
     date_added = Column(DateTime, server_default=func.now())
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
 
@@ -431,6 +518,7 @@ class Contact(Base):
     ulinc_id = Column(String(16), nullable=False)
     ulinc_ulinc_campaign_id = Column(String(16), nullable=False)
     tib_id = Column(String(36), nullable=True)
+    contact_info = Column(JSON, nullable=False)
 
     # Table Metadata
     asOfStartTime = Column(DateTime, server_default=func.now())
@@ -444,28 +532,28 @@ class Contact(Base):
     def get_emails(self):
         return [self.email1, self.email2, self.email3]
 
-class Contact_info(Base):
-    __tablename__ = 'contact_info'
+# class Contact_info(Base):
+#     __tablename__ = 'contact_info'
 
-    def __init__(self, contact_info_id, contact_id, contact_info_type_id, contact_info_json):
-        self.contact_info_id = contact_info_id
-        self.contact_id = contact_id
-        self.contact_info_type_id = contact_info_type_id
-        self.contact_info_json = contact_info_json
+#     def __init__(self, contact_info_id, contact_id, contact_info_type_id, contact_info_json):
+#         self.contact_info_id = contact_info_id
+#         self.contact_id = contact_id
+#         self.contact_info_type_id = contact_info_type_id
+#         self.contact_info_json = contact_info_json
     
-    contact_info_id = Column(String(36), primary_key=True, nullable=False)
+#     contact_info_id = Column(String(36), primary_key=True, nullable=False)
 
-    contact_id = Column(String(36), ForeignKey('contact.contact_id'), nullable=False)
-    # contact_info_type_id = Column(Integer, ForeignKey('contact_info_type.contact_info_type_id'), nullable=False)
+#     contact_id = Column(String(36), ForeignKey('contact.contact_id'), nullable=False)
+#     # contact_info_type_id = Column(Integer, ForeignKey('contact_info_type.contact_info_type_id'), nullable=False)
 
-    contact_info_json = Column(JSON, nullable=False)
+#     contact_info_json = Column(JSON, nullable=False)
 
-    # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+#     # Table Metadata
+#     asOfStartTime = Column(DateTime, server_default=func.now())
+#     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+#     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
-    # SQLAlchemy Relationships and Backreferences
+#     # SQLAlchemy Relationships and Backreferences
 
 
 class Action(Base):
@@ -491,7 +579,6 @@ class Action(Base):
 
     # Table Metadata
     date_added = Column(DateTime, server_default=func.now())
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
     action_type = relationship('Action_type', uselist=False, lazy=True)
@@ -516,7 +603,6 @@ class Action_type(Base): # (messenger_origin_message, new_connection_date{backda
 
     # Table Metadata
     date_added = Column(DateTime, server_default=func.now())
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
 
@@ -543,7 +629,6 @@ class Contact_source(Base):
 
     # Table Metadata
     date_added = Column(DateTime, server_default=func.now())
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
     contacts = relationship('Contact', backref=backref('contact_source', uselist=False), lazy=False)
@@ -562,12 +647,11 @@ class Contact_source_type(Base):
     # Foreign Keys
 
     # Common Columns
-    action_type_name = Column(String(64), nullable=False)
-    action_type_description = Column(String(512), nullable=False)
+    contact_source_type_name = Column(String(128), nullable=False)
+    contact_source_type_description = Column(String(256), nullable=False)
 
     # Table Metadata
     date_added = Column(DateTime, server_default=func.now())
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
 
@@ -648,7 +732,6 @@ class Dte_sender(Base):
 
     # Table Metadata
     date_added = Column(DateTime, server_default=func.now())
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
     email_config = relationship('Email_config', uselist=False, lazy=True)
@@ -720,6 +803,7 @@ class Email_config(Base):
 
 class Email_server(Base):
     __tablename__ = 'email_server'
+    gmail_id = '936dce84-b50f-4b72-824f-b01989b20500'
 
     def __init__(self, email_server_id, email_server_name, smtp_address, smtp_tls_port, smtp_ssl_port, imap_address, imap_ssl_port):
         self.email_server_id = email_server_id
@@ -867,13 +951,12 @@ class Cookie_type(Base):
 class Time_zone(Base):
     __tablename__ = 'time_zone'
 
-    def __init__(self, time_zone_id, time_zone_name, utc_hour_diff):
+    def __init__(self, time_zone_id, time_zone_name):
         self.time_zone_id = time_zone_id
         self.time_zone_name = time_zone_name
-        self.utc_hour_diff = utc_hour_diff
     
     time_zone_id = Column(String(36), primary_key=True)
     time_zone_name = Column(String(64), nullable=False)
-    utc_hour_diff = Column(Integer, nullable=False)
+    time_zone_code = Column(String(16), nullable=False)
 
     date_added = Column(DateTime, server_default=func.now())

@@ -1,8 +1,8 @@
-"""first revision
+"""first revision and model creation
 
-Revision ID: 4ae03321e172
+Revision ID: 83dd985ca947
 Revises: 
-Create Date: 2021-03-10 14:20:50.787941
+Create Date: 2021-03-15 09:27:58.355915
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '4ae03321e172'
+revision = '83dd985ca947'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,6 +24,20 @@ def upgrade():
     sa.Column('account_type_description', sa.String(length=256), nullable=False),
     sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.PrimaryKeyConstraint('account_type_id')
+    )
+    op.create_table('action_type',
+    sa.Column('action_type_id', sa.Integer(), nullable=False),
+    sa.Column('action_type_name', sa.String(length=64), nullable=False),
+    sa.Column('action_type_description', sa.String(length=512), nullable=False),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.PrimaryKeyConstraint('action_type_id')
+    )
+    op.create_table('contact_source_type',
+    sa.Column('contact_source_type_id', sa.Integer(), nullable=False),
+    sa.Column('contact_source_type_name', sa.String(length=128), nullable=False),
+    sa.Column('contact_source_type_description', sa.String(length=256), nullable=False),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.PrimaryKeyConstraint('contact_source_type_id')
     )
     op.create_table('cookie_type',
     sa.Column('cookie_type_id', sa.Integer(), nullable=False),
@@ -44,10 +58,17 @@ def upgrade():
     sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.PrimaryKeyConstraint('email_server_id')
     )
+    op.create_table('janium_campaign_step_type',
+    sa.Column('janium_campaign_step_type_id', sa.Integer(), nullable=False),
+    sa.Column('janium_campaign_step_type_name', sa.String(length=64), nullable=False),
+    sa.Column('janium_campaign_step_type_description', sa.String(length=512), nullable=False),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.PrimaryKeyConstraint('janium_campaign_step_type_id')
+    )
     op.create_table('time_zone',
     sa.Column('time_zone_id', sa.String(length=36), nullable=False),
     sa.Column('time_zone_name', sa.String(length=64), nullable=False),
-    sa.Column('utc_hour_diff', sa.Integer(), nullable=False),
+    sa.Column('time_zone_code', sa.String(length=16), nullable=False),
     sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.PrimaryKeyConstraint('time_zone_id')
     )
@@ -60,34 +81,13 @@ def upgrade():
     sa.Column('company', sa.String(length=256), nullable=True),
     sa.Column('location', sa.String(length=256), nullable=True),
     sa.Column('primary_email', sa.String(length=256), nullable=False),
-    sa.Column('campaign_management_email', sa.String(length=256), nullable=True),
-    sa.Column('alternate_dte_email', sa.String(length=256), nullable=True),
     sa.Column('phone', sa.String(length=256), nullable=True),
+    sa.Column('additional_contact_info', sa.JSON(), nullable=True),
     sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('user_id')
-    )
-    op.create_table('action_type',
-    sa.Column('action_type_id', sa.Integer(), nullable=False),
-    sa.Column('action_type_name', sa.String(length=64), nullable=False),
-    sa.Column('action_type_description', sa.String(length=512), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_by', sa.String(length=36), nullable=False),
-    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
-    sa.PrimaryKeyConstraint('action_type_id')
-    )
-    op.create_table('contact_source_type',
-    sa.Column('contact_source_type_id', sa.Integer(), nullable=False),
-    sa.Column('action_type_name', sa.String(length=64), nullable=False),
-    sa.Column('action_type_description', sa.String(length=512), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_by', sa.String(length=36), nullable=False),
-    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
-    sa.PrimaryKeyConstraint('contact_source_type_id')
     )
     op.create_table('cookie',
     sa.Column('cookie_id', sa.String(length=36), nullable=False),
@@ -124,23 +124,26 @@ def upgrade():
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('dte_id')
     )
-    op.create_table('janium_campaign_step_type',
-    sa.Column('janium_campaign_step_type_id', sa.Integer(), nullable=False),
-    sa.Column('janium_campaign_step_type_name', sa.String(length=64), nullable=False),
-    sa.Column('janium_campaign_step_type_description', sa.String(length=512), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    op.create_table('login_credential',
+    sa.Column('login_credential_id', sa.String(length=36), nullable=False),
+    sa.Column('user_id', sa.String(length=36), nullable=False),
+    sa.Column('login_credential', sa.String(length=45), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
-    sa.PrimaryKeyConstraint('janium_campaign_step_type_id')
+    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
+    sa.PrimaryKeyConstraint('login_credential_id')
     )
-    op.create_table('user_type',
-    sa.Column('user_type_id', sa.Integer(), nullable=False),
-    sa.Column('user_type_name', sa.String(length=128), nullable=False),
-    sa.Column('user_type_description', sa.String(length=256), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    op.create_table('permission',
+    sa.Column('permission_id', sa.String(length=36), nullable=False),
+    sa.Column('permission_name', sa.String(length=64), nullable=False),
+    sa.Column('permission_description', sa.String(length=512), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
-    sa.PrimaryKeyConstraint('user_type_id')
+    sa.PrimaryKeyConstraint('permission_id')
     )
     op.create_table('email_config',
     sa.Column('email_config_id', sa.String(length=36), nullable=False),
@@ -173,31 +176,33 @@ def upgrade():
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('ulinc_config_id')
     )
-    op.create_table('user_type_xref',
+    op.create_table('user_permission_map',
     sa.Column('user_id', sa.String(length=36), nullable=False),
-    sa.Column('user_type_id', sa.Integer(), nullable=False),
+    sa.Column('permission_id', sa.String(length=36), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('updated_by', sa.String(length=36), nullable=False),
+    sa.ForeignKeyConstraint(['permission_id'], ['permission.permission_id'], ),
+    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
-    sa.ForeignKeyConstraint(['user_type_id'], ['user_type.user_type_id'], ),
-    sa.PrimaryKeyConstraint('user_id', 'user_type_id')
+    sa.PrimaryKeyConstraint('user_id', 'permission_id')
     )
     op.create_table('dte_sender',
     sa.Column('dte_sender_id', sa.String(length=36), nullable=False),
     sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('email_config_id', sa.String(length=36), nullable=False),
     sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['email_config_id'], ['email_config.email_config_id'], ),
-    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('dte_sender_id')
     )
     op.create_table('account_group',
     sa.Column('account_group_id', sa.String(length=36), nullable=False),
-    sa.Column('account_group_manager_id', sa.String(length=36), nullable=True),
+    sa.Column('account_group_manager_id', sa.String(length=36), nullable=False),
     sa.Column('dte_id', sa.String(length=36), nullable=True),
-    sa.Column('dte_sender_id', sa.String(length=36), nullable=True),
-    sa.Column('account_group_name', sa.String(length=250), nullable=False),
-    sa.Column('account_group_description', sa.String(length=1000), nullable=True),
+    sa.Column('dte_sender_id', sa.String(length=36), nullable=False),
+    sa.Column('account_group_name', sa.String(length=128), nullable=False),
+    sa.Column('account_group_description', sa.String(length=256), nullable=True),
     sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
@@ -234,22 +239,31 @@ def upgrade():
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('account_id')
     )
+    op.create_table('user_account_group_map',
+    sa.Column('user_id', sa.String(length=36), nullable=False),
+    sa.Column('account_group_id', sa.String(length=36), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('updated_by', sa.String(length=36), nullable=False),
+    sa.ForeignKeyConstraint(['account_group_id'], ['account_group.account_group_id'], ),
+    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
+    sa.PrimaryKeyConstraint('user_id', 'account_group_id')
+    )
     op.create_table('contact_source',
     sa.Column('contact_source_id', sa.String(length=36), nullable=False),
     sa.Column('account_id', sa.String(length=36), nullable=False),
     sa.Column('contact_source_type_id', sa.Integer(), nullable=False),
     sa.Column('contact_source_json', sa.JSON(), nullable=False),
     sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
     sa.ForeignKeyConstraint(['contact_source_type_id'], ['contact_source_type.contact_source_type_id'], ),
-    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('contact_source_id')
     )
     op.create_table('janium_campaign',
     sa.Column('janium_campaign_id', sa.String(length=36), nullable=False),
-    sa.Column('account_id', sa.String(length=36), nullable=True),
-    sa.Column('email_config_id', sa.String(length=36), nullable=True),
+    sa.Column('account_id', sa.String(length=36), nullable=False),
+    sa.Column('email_config_id', sa.String(length=36), nullable=False),
     sa.Column('janium_campaign_name', sa.String(length=512), nullable=False),
     sa.Column('janium_campaign_description', sa.String(length=512), nullable=True),
     sa.Column('is_messenger', sa.Boolean(), server_default=sa.text('false'), nullable=False),
@@ -265,10 +279,27 @@ def upgrade():
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('janium_campaign_id')
     )
-    op.create_table('user_account_xref',
+    op.create_table('user_account_map',
     sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('account_id', sa.String(length=36), nullable=False),
+    sa.Column('permission_id', sa.String(length=36), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
+    sa.ForeignKeyConstraint(['permission_id'], ['permission.permission_id'], ),
+    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
+    sa.PrimaryKeyConstraint('user_id', 'account_id', 'permission_id')
+    )
+    op.create_table('user_proxy_map',
+    sa.Column('user_id', sa.String(length=36), nullable=False),
+    sa.Column('account_id', sa.String(length=36), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('updated_by', sa.String(length=36), nullable=False),
+    sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
+    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('user_id', 'account_id')
     )
@@ -316,6 +347,7 @@ def upgrade():
     sa.Column('ulinc_id', sa.String(length=16), nullable=False),
     sa.Column('ulinc_ulinc_campaign_id', sa.String(length=16), nullable=False),
     sa.Column('tib_id', sa.String(length=36), nullable=True),
+    sa.Column('contact_info', sa.JSON(), nullable=False),
     sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
@@ -333,52 +365,41 @@ def upgrade():
     sa.Column('action_timestamp', sa.DateTime(), nullable=True),
     sa.Column('action_message', sa.Text(), nullable=True),
     sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['action_type_id'], ['action_type.action_type_id'], ),
     sa.ForeignKeyConstraint(['contact_id'], ['contact.contact_id'], ),
-    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('action_id')
-    )
-    op.create_table('contact_info',
-    sa.Column('contact_info_id', sa.String(length=36), nullable=False),
-    sa.Column('contact_id', sa.String(length=36), nullable=False),
-    sa.Column('contact_info_json', sa.JSON(), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('updated_by', sa.String(length=36), nullable=False),
-    sa.ForeignKeyConstraint(['contact_id'], ['contact.contact_id'], ),
-    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
-    sa.PrimaryKeyConstraint('contact_info_id')
     )
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('contact_info')
     op.drop_table('action')
     op.drop_table('contact')
     op.drop_table('ulinc_campaign')
     op.drop_table('janium_campaign_step')
-    op.drop_table('user_account_xref')
+    op.drop_table('user_proxy_map')
+    op.drop_table('user_account_map')
     op.drop_table('janium_campaign')
     op.drop_table('contact_source')
+    op.drop_table('user_account_group_map')
     op.drop_table('account')
     op.drop_table('account_group')
     op.drop_table('dte_sender')
-    op.drop_table('user_type_xref')
+    op.drop_table('user_permission_map')
     op.drop_table('ulinc_config')
     op.drop_table('email_config')
-    op.drop_table('user_type')
-    op.drop_table('janium_campaign_step_type')
+    op.drop_table('permission')
+    op.drop_table('login_credential')
     op.drop_table('dte')
     op.drop_table('credentials')
     op.drop_table('cookie')
-    op.drop_table('contact_source_type')
-    op.drop_table('action_type')
     op.drop_table('user')
     op.drop_table('time_zone')
+    op.drop_table('janium_campaign_step_type')
     op.drop_table('email_server')
     op.drop_table('cookie_type')
+    op.drop_table('contact_source_type')
+    op.drop_table('action_type')
     op.drop_table('account_type')
     # ### end Alembic commands ###
