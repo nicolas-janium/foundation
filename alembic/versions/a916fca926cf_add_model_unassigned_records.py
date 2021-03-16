@@ -190,10 +190,10 @@ def upgrade():
     mt_time_zone_id = str(uuid.uuid4())
     op.bulk_insert(time_zone,
         [
-            {'time_zone_id': mt_time_zone_id, 'time_zone_name': 'Mountain Time', 'time_zone_code': 'MT'},
-            {'time_zone_id': str(uuid.uuid4()), 'time_zone_name': 'Eastern Time', 'time_zone_code': 'ET'},
-            {'time_zone_id': str(uuid.uuid4()), 'time_zone_name': 'Central Time', 'time_zone_code': 'CT'},
-            {'time_zone_id': str(uuid.uuid4()), 'time_zone_name': 'Pacific Time', 'time_zone_code': 'PT'}
+            {'time_zone_id': mt_time_zone_id, 'time_zone_name': 'Mountain Time', 'time_zone_code': 'US/Mountain'},
+            {'time_zone_id': str(uuid.uuid4()), 'time_zone_name': 'Eastern Time', 'time_zone_code': 'US/Eastern'},
+            {'time_zone_id': str(uuid.uuid4()), 'time_zone_name': 'Central Time', 'time_zone_code': 'US/Central'},
+            {'time_zone_id': str(uuid.uuid4()), 'time_zone_name': 'Pacific Time', 'time_zone_code': 'US/Pacific'}
         ]
     )
     op.execute(

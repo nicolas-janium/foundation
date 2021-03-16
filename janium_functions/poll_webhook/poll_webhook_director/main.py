@@ -32,20 +32,23 @@ else:
 
 
 def main(event, context):
-    # Instantiates a Pub/Sub client
-    publisher = pubsub_v1.PublisherClient()
-    PROJECT_ID = os.getenv('PROJECT_ID')
-    topic_path = publisher.topic_path(PROJECT_ID, 'janium-poll-webhook-topic')
+    # Instantiates a Pub/Sub account
+    # publisher = pubsub_v1.PublisherClient()
+    # PROJECT_ID = os.getenv('PROJECT_ID')
+    # topic_path = publisher.topic_path(PROJECT_ID, 'janium-poll-webhook-topic')
 
-    session = Session()
+    session = get_session()
 
-    clients = session.query(Client).filter(and_(Client.is_active == 1, Client.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id)).all()
+    # accounts = session.query(Client).filter(and_(Client.is_active == 1, Client.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id)).all()
+    # accounts = session.query(Account).filter(and_(Account.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id, and_(Account.effective_start_date < datetime.utcnow(), Account.effective_end_date > datetime.utcnow()))).all()
+    accounts = session.query(Account).filter(and_(Account.effective_start_date < datetime.utcnow(), Account.effective_end_date > datetime.utcnow())).all()
 
-    clients_list = []
-    for client in clients:
-        if client.ulinc_config.new_connection_webhook:
+    accounts_list = []
+    for account in accounts:
+        print(account.account_id)
+        if account.ulinc_config.new_connection_webhook:
             message_json = json.dumps(
-                {"client_id": client.client_id}
+                {"account_id": account.account_id}
             )
             message_bytes = message_json.encode('utf-8')
 
@@ -55,15 +58,15 @@ def main(event, context):
                     publish_future = publisher.publish(topic_path, data=message_bytes)
                     publish_future.result()
                 else:
-                    payload = {"client_id": client.client_id}
+                    payload = {"account_id": account.account_id}
                     payload = json.dumps(payload)
                     payload = base64.b64encode(str(payload).encode("utf-8"))
-                    return function.main({"data": payload}, 1)
-                clients_list.append({"client_id": client.client_id, "client_full_name": client.full_name})
+                    # return function.main({"data": payload}, 1)
+                accounts_list.append({"account_id": account.account_id})
                 # return 'OKKKK'
             except Exception as err:
                 logger.error(str(err))
-    logger.info('Messages to janium-poll-webhook-topic published for clients {}'.format(clients_list))
+    logger.info('Messages to janium-poll-webhook-topic published for accounts {}'.format(accounts_list))
 
 if __name__ == '__main__':
     payload = {

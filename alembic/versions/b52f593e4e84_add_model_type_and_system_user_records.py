@@ -97,8 +97,10 @@ def upgrade():
     )
     op.bulk_insert(contact_source_type,
         [
-            {'contact_source_type_id': 1, 'contact_source_type_name': 'ulinc_webhook', 'contact_source_type_description': 'Webhook Data from Ulinc'},
-            {'contact_source_type_id': 2, 'contact_source_type_name': 'ulinc_csv_export', 'contact_source_type_description': 'CSV export from Ulinc'}
+            {'contact_source_type_id': 1, 'contact_source_type_name': 'ulinc_webhook_nc', 'contact_source_type_description': 'Webhook Data from Ulinc New Connection Webhook'},
+            {'contact_source_type_id': 2, 'contact_source_type_name': 'ulinc_webhook_nm', 'contact_source_type_description': 'Webhook Data from Ulinc New Message Webhook'},
+            {'contact_source_type_id': 3, 'contact_source_type_name': 'ulinc_webhook_sm', 'contact_source_type_description': 'Webhook Data from Ulinc Send Message Webhook'},
+            {'contact_source_type_id': 4, 'contact_source_type_name': 'ulinc_csv_export', 'contact_source_type_description': 'CSV export from Ulinc'}
         ]
     )
     op.bulk_insert(janium_campaign_step_type,

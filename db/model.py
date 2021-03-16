@@ -92,7 +92,8 @@ class Account(Base):
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
-    users = relationship('User_account_map', back_populates='account') 
+    # users = relationship('User_account_map', back_populates='account')
+    users = relationship('User_account_map') 
     janium_campaigns = relationship('Janium_campaign', backref=backref('janium_campaign_account', uselist=False), uselist=True, lazy='dynamic')
     ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('ulinc_campaign_account', uselist=False), uselist=True, lazy='dynamic')
     contacts = relationship('Contact', backref=backref('contact_account', uselist=False), uselist=True, lazy='dynamic')
@@ -143,59 +144,35 @@ class User(Base):
 
     asOfStartTime = Column(DateTime, server_default=func.now())
     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+    # updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
-    accounts = relationship('User_account_map', back_populates='account_user')
-    permissions = relationship('User_permission_map', back_populates='permission_user')
-
-# class User_type(Base):
-#     __tablename__ = 'user_type'
-
-#     def __init__(self, user_type_id, user_type_name, user_type_description):
-#         self.user_type_id = user_type_id
-#         self.user_type_name = user_type_name
-#         self.user_type_description = user_type_description
-    
-#     user_type_id = Column(Integer, primary_key=True, nullable=False)
-#     user_type_name = Column(String(128), nullable=False)
-#     user_type_description = Column(String(256), nullable=False)
-
-#     date_added = Column(DateTime, server_default=func.now())
-
-#     users = relationship('User_type_xref', back_populates='user_type')
-
-
-# class User_type_xref(Base):
-#     __tablename__ = 'user_type_xref'
-
-#     def __init__(self, user_id, user_type_id):
-#         self.user_id = user_id
-#         self.user_type_id = user_type_id
-    
-#     user_id = Column(String(36), ForeignKey('user.user_id'), primary_key=True, nullable=False)
-#     user_type_id = Column(Integer, ForeignKey('user_type.user_type_id'), primary_key=True, nullable=False)
-
-#     user = relationship('User', back_populates='user_types')
-#     user_type = relationship('User_type', back_populates='users')
+    # accounts = relationship('User_account_map', back_populates='account_user')
+    # permissions = relationship('User_permission_map', back_populates='permission_user')
+    accounts = relationship('User_account_map')
+    permissions = relationship('User_permission_map')
 
 
 class User_account_map(Base):
     __tablename__ = 'user_account_map'
 
-    def __init__(self, user_id, account_id):
+    def __init__(self, user_id, account_id, permission_id):
         self.user_id = user_id
         self.account_id = account_id
-    
+        self.permission_id = permission_id
+
     user_id = Column(String(36), ForeignKey('user.user_id'), primary_key=True, nullable=False)
     account_id = Column(String(36), ForeignKey('account.account_id'), primary_key=True, nullable=False)
     permission_id = Column(String(36), ForeignKey('permission.permission_id'), primary_key=True, nullable=False)
 
     asOfStartTime = Column(DateTime, server_default=func.now())
     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+    # updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
-    user = relationship('User', back_populates='accounts')
-    account = relationship('Account', back_populates='users')
+    # user = relationship('User', back_populates='user_accounts', foreign_keys=[user_id])
+    # account = relationship('Account', back_populates='account_users', foreign_keys=[account_id])
+    user = relationship('User', foreign_keys=[user_id])
+    # user = relationship('User', foreign_keys='User_account_map.user_id')
+    account = relationship('Account', foreign_keys=[account_id])
 
 
 class User_proxy_map(Base):
@@ -212,8 +189,10 @@ class User_proxy_map(Base):
     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
-    user = relationship('User', back_populates='accounts')
-    account = relationship('Account', back_populates='users')
+    # user = relationship('User', back_populates='proxy_accounts', foreign_keys=[user_id])
+    # account = relationship('Account', back_populates='proxy_users')
+    user = relationship('User', foreign_keys=[user_id])
+    account = relationship('Account', foreign_keys=[account_id])
 
 class User_permission_map(Base):
     __tablename__ = 'user_permission_map'
@@ -227,10 +206,12 @@ class User_permission_map(Base):
 
     asOfStartTime = Column(DateTime, server_default=func.now())
     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+    # updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
-    user = relationship('User', back_populates='accounts')
-    permission = relationship('Permission', back_populates='users')
+    # user = relationship('User', back_populates='permissions', foreign_keys=[user_id])
+    # permission = relationship('Permission', back_populates='permission_users')
+    user = relationship('User', foreign_keys=[user_id])
+    permission = relationship('Permission', foreign_keys=[permission_id])
 
 class Permission(Base):
     __tablename__ = 'permission'
@@ -248,7 +229,7 @@ class Permission(Base):
     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
-    users = relationship('User_permission_map', back_populates='permission_user')
+    # users = relationship('User_permission_map', back_populates='permission_user')
 
 class Login_credential(Base):
     __tablename__ = 'login_credential'
@@ -322,35 +303,6 @@ class User_account_group_map(Base):
     asOfStartTime = Column(DateTime, server_default=func.now())
     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
-
-# class Account_group_manager(Base):
-#     __tablename__ = 'account_group_manager'
-#     janium_account_group_manager_id = 'c2451b54-335b-4bae-8e61-12dcbf2b02b3'
-#     unassigned_account_group_manager_id = '59e4d475-102c-419b-9c2e-7da27bec9286'
-
-#     def __init__(self, account_group_manager_id, first_name, last_name):
-#         self.account_group_manager_id = account_group_manager_id
-#         self.first_name = first_name
-#         self.last_name = last_name
-
-#     # Primary Keys
-#     account_group_manager_id = Column(String(36), primary_key=True, nullable=False)
-
-#     # Foreign Keys
-
-#     # Common Columns
-#     first_name = Column(String(128), nullable=False)
-#     last_name = Column(String(128), nullable=False)
-#     full_name = Column(String(256), Computed("CONCAT(first_name, ' ', last_name)"))
-
-#     # Table Metadata
-#     asOfStartTime = Column(DateTime, server_default=func.now())
-#     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-#     effective_start_date = Column(DateTime, server_default=func.now())
-#     effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-#     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
-
-#     # SQLAlchemy Relationships and Backreferences
 
 
 class Janium_campaign(Base):
@@ -495,7 +447,7 @@ class Contact(Base):
     __tablename__ = 'contact'
     unassigned_contact_id = '9b84cf42-80f5-4cb4-80e6-7da4632b8177'
 
-    def __init__(self, contact_id, contact_source_id, account_id, janium_campaign_id, ulinc_campaign_id, ulinc_id, ulinc_ulinc_campaign_id, tib_id):
+    def __init__(self, contact_id, contact_source_id, account_id, janium_campaign_id, ulinc_campaign_id, ulinc_id, ulinc_ulinc_campaign_id, contact_info, tib_id, updated_by):
         self.contact_id = contact_id
         self.contact_source_id = contact_source_id
         self.account_id = account_id
@@ -503,7 +455,9 @@ class Contact(Base):
         self.ulinc_campaign_id = ulinc_campaign_id
         self.ulinc_id = ulinc_id
         self.ulinc_ulinc_campaign_id = ulinc_ulinc_campaign_id
+        self.contact_info = contact_info
         self.tib_id = tib_id
+        self.updated_by = updated_by
 
     # Primary Keys
     contact_id = Column(String(36), primary_key=True, nullable=False)
@@ -527,7 +481,7 @@ class Contact(Base):
 
     # SQLAlchemy Relationships and Backreferences
     actions = relationship('Action', backref=backref('contact', uselist=False), uselist=True, lazy='dynamic')
-    info = relationship('Contact_info', uselist=True, lazy='dynamic')
+    # info = relationship('Contact_info', uselist=True, lazy='dynamic')
 
     def get_emails(self):
         return [self.email1, self.email2, self.email3]
