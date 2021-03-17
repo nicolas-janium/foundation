@@ -4,6 +4,7 @@ from datetime import datetime
 import logging
 import sys
 import os
+import pytz
 
 from google.cloud import pubsub_v1
 from sqlalchemy import and_, or_
@@ -30,6 +31,8 @@ else:
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 
+mtn_tz = pytz.timezone('US/Mountain')
+mtn_time = datetime.now(pytz.timezone('UTC')).astimezone(mtn_tz)
 
 def main(event, context):
     # Instantiates a Pub/Sub client
@@ -37,36 +40,37 @@ def main(event, context):
     PROJECT_ID = os.getenv('PROJECT_ID')
     topic_path = publisher.topic_path(PROJECT_ID, 'janium-poll-ulinc-csv-topic')
 
-    session = Session()
+    session = get_session()
 
-    clients = session.query(Client).filter(and_(
-        Client.is_active == 1,
-        Client.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id,
-        Client.is_data_enrichment == 1
+    accounts = session.query(Account).filter(and_(
+        and_(Account.effective_start_date < mtn_time, Account.effective_end_date > mtn_time),
+        and_(Account.data_enrichment_start_date < mtn_time, Account.data_enrichment_end_date > mtn_time),
+        Account.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id,
     )).all()
 
-    clients_list = []
-    for client in clients:
-        message_json = json.dumps(
-            {"client_id": client.client_id}
-        )
-        message_bytes = message_json.encode('utf-8')
+    accounts_list = []
+    for account in accounts:
+        print(account.account_id)
+        # message_json = json.dumps(
+        #     {"account_id": account.account_id}
+        # )
+        # message_bytes = message_json.encode('utf-8')
 
-        ## Publish message to send-dte-function ###
-        try:
-            if not os.getenv('LOCAL_DEV'):
-                publish_future = publisher.publish(topic_path, data=message_bytes)
-                publish_future.result()
-            else:
-                payload = {"client_id": client.client_id}
-                payload = json.dumps(payload)
-                payload = base64.b64encode(str(payload).encode("utf-8"))
-                return function.main({"data": payload}, 1)
-            clients_list.append({"client_id": client.client_id, "client_full_name": client.full_name})
-            # return 'OKKKK'
-        except Exception as err:
-            logger.error(str(err))
-    logger.info('Messages to janium-poll-ulinc-csv-topic published for clients {}'.format(clients_list))
+        # ## Publish message to send-dte-function ###
+        # try:
+        #     if not os.getenv('LOCAL_DEV'):
+        #         publish_future = publisher.publish(topic_path, data=message_bytes)
+        #         publish_future.result()
+        #     else:
+        #         payload = {"account_id": account.account_id}
+        #         payload = json.dumps(payload)
+        #         payload = base64.b64encode(str(payload).encode("utf-8"))
+        #         return function.main({"data": payload}, 1)
+        #     clients_list.append({"account_id": account.account_id})
+        #     # return 'OKKKK'
+        # except Exception as err:
+        #     logger.error(str(err))
+    logger.info('Messages to janium-poll-ulinc-csv-topic published for accounts {}'.format(accounts_list))
 
 if __name__ == '__main__':
     payload = {

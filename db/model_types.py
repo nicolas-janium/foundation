@@ -62,7 +62,7 @@ action_type_dict = {
         "id": 12,
         "description": "The contact responded with an arbitrary response and further campaign steps should continue."
     },
-    "ulinc_origin_messenger_message": {
+    "ulinc_messenger_origin_message": {
         "id": 13,
         "description": "This is the origin message for Ulinc Messenger Campaigns"
     },

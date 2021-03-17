@@ -70,20 +70,20 @@ def create_new_contact(contact_info, account_id, campaign_id, existing_ulinc_cam
         existing_ulinc_campaign_id,
         data['id'],
         data['campaign_id'],
-        json.dumps(
-            {
-                'ulinc': {
-                    'title': data['title'],
-                    'company': data['company'],
-                    'location': data['location'],
-                    'email': data['email'],
-                    'phone': data['phone'],
-                    'website': data['website'],
-                    'li_salesnav_profile_url': None,
-                    'li_profile_url': data['profile']
-                }
+        {
+            'ulinc': {
+                'first_name': data['first_name'],
+                'last_name': data['last_name'],
+                'title': data['title'],
+                'company': data['company'],
+                'location': data['location'],
+                'email': data['email'],
+                'phone': data['phone'],
+                'website': data['website'],
+                'li_salesnav_profile_url': None,
+                'li_profile_url': data['profile']
             }
-        ),
+        },
         None,
         User.system_user_id
     )
@@ -115,8 +115,8 @@ def handle_webhook_response(account, contact_source_id, session):
                     existing_contact_info['ulinc']['phone'] = new_contact_info['phone']
                     existing_contact_info['ulinc']['website'] = new_contact_info['website']
                     existing_contact_info['ulinc']['li_profile_url'] = new_contact_info['profile']
-                    existing_contact.contact_info = json.dumps(existing_contact_info)
-                    connection_action = Action(str(uuid4()), existing_contact.contact_id, webhook_response_type_dict['ulinc_new_connection']['id'], None, None)
+                    existing_contact.contact_info = existing_contact_info
+                    connection_action = Action(str(uuid4()), existing_contact.contact_id, action_type_dict['li_new_connection']['id'], None, None)
                     session.add(connection_action)
             else:
                 if existing_ulinc_campaign:
@@ -142,7 +142,7 @@ def handle_webhook_response(account, contact_source_id, session):
                 existing_contact_info['ulinc']['phone'] = new_contact_info['phone']
                 existing_contact_info['ulinc']['website'] = new_contact_info['website']
                 existing_contact_info['ulinc']['li_profile_url'] = new_contact_info['profile']
-                existing_contact.contact_info = json.dumps(existing_contact_info)
+                existing_contact.contact_info = existing_contact_info
             else:
                 if existing_ulinc_campaign:
                     new_contact = create_new_contact(item, account.account_id, existing_ulinc_campaign.parent_janium_campaign.janium_campaign_id, existing_ulinc_campaign.ulinc_campaign_id, contact_source_id)
@@ -154,7 +154,7 @@ def handle_webhook_response(account, contact_source_id, session):
                 str(uuid4()),
                 contact_id,
                 action_type_dict['li_new_message']['id'],
-                datetime.strptime(item['time'], "%B %d, %Y, %I:%M %p") - timedelta(hours=2),
+                mtn_time,
                 item['message']
             )
             session.add(new_message_action)
@@ -167,7 +167,7 @@ def handle_webhook_response(account, contact_source_id, session):
                 existing_contact_info['ulinc']['phone'] = new_contact_info['phone']
                 existing_contact_info['ulinc']['website'] = new_contact_info['website']
                 existing_contact_info['ulinc']['li_profile_url'] = new_contact_info['profile']
-                existing_contact.contact_info = json.dumps(existing_contact_info)
+                existing_contact.contact_info = existing_contact_info
             else:
                 if existing_ulinc_campaign:
                     new_contact = create_new_contact(item, account.account_id, existing_ulinc_campaign.parent_janium_campaign.janium_campaign_id, existing_ulinc_campaign.ulinc_campaign_id, contact_source_id)
@@ -191,8 +191,8 @@ def handle_webhook_response(account, contact_source_id, session):
                 new_action = Action(
                     str(uuid4()),
                     contact_id,
-                    action_type_dict['ulinc_origin_messenger_message']['id'],
-                    datetime.strptime(item['time'], "%B %d, %Y, %I:%M %p") - timedelta(hours=2),
+                    action_type_dict['ulinc_messenger_origin_message']['id'],
+                    mtn_time,
                     item['message']
                 )
             else:
@@ -200,7 +200,7 @@ def handle_webhook_response(account, contact_source_id, session):
                     str(uuid4()),
                     contact_id,
                     action_type_dict['li_send_message']['id'],
-                    datetime.strptime(item['time'], "%B %d, %Y, %I:%M %p") - timedelta(hours=2),
+                    mtn_time,
                     item['message']
                 )
             session.add(new_action)

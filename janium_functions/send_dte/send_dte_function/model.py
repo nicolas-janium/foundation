@@ -55,19 +55,20 @@ class Account(Base):
     unassigned_account_id = '8acafb6b-3ce5-45b5-af81-d357509ba457'
 
     def __init__(self, account_id, account_group_id, ulinc_config_id, email_config_id,
-                       is_sending_emails, is_sending_li_messages, is_receiving_dte, is_data_enrichment,
-                       effective_start_date, effective_end_date):
+                       is_sending_emails, is_sending_li_messages, is_receiving_dte,
+                       effective_start_date, effective_end_date, data_enrichment_start_date,
+                       data_enrichment_end_date):
         self.account_id = account_id,
         self.account_group_id = account_group_id
         self.ulinc_config_id = ulinc_config_id
         self.email_config_id = email_config_id
-        # self.is_active = is_active
         self.is_sending_emails = is_sending_emails
         self.is_sending_li_messages = is_sending_li_messages
         self.is_receiving_dte = is_receiving_dte
-        self.is_data_enrichment = is_data_enrichment
         self.effective_start_date = effective_start_date
         self.effective_end_date = effective_end_date
+        self.data_enrichment_start_date = data_enrichment_start_date
+        self.data_enrichment_end_date = data_enrichment_end_date
 
     account_id = Column(String(36), primary_key=True)
 
@@ -77,11 +78,9 @@ class Account(Base):
     email_config_id = Column(String(36), ForeignKey('email_config.email_config_id'), nullable=False)
     time_zone_id = Column(String(36), ForeignKey('time_zone.time_zone_id'), nullable=False)
 
-    # is_active = Column(Boolean, server_default=false(), nullable=False)
     is_sending_emails = Column(Boolean, server_default=false(), nullable=False)
     is_sending_li_messages = Column(Boolean, server_default=false(), nullable=False)
     is_receiving_dte = Column(Boolean, server_default=false(), nullable=False)
-    # is_data_enrichment = Column(Boolean, server_default=false(), nullable=False)
 
     asOfStartTime = Column(DateTime, server_default=func.now())
     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
@@ -447,7 +446,7 @@ class Contact(Base):
     __tablename__ = 'contact'
     unassigned_contact_id = '9b84cf42-80f5-4cb4-80e6-7da4632b8177'
 
-    def __init__(self, contact_id, contact_source_id, account_id, janium_campaign_id, ulinc_campaign_id, ulinc_id, ulinc_ulinc_campaign_id, tib_id):
+    def __init__(self, contact_id, contact_source_id, account_id, janium_campaign_id, ulinc_campaign_id, ulinc_id, ulinc_ulinc_campaign_id, contact_info, tib_id, updated_by):
         self.contact_id = contact_id
         self.contact_source_id = contact_source_id
         self.account_id = account_id
@@ -455,7 +454,9 @@ class Contact(Base):
         self.ulinc_campaign_id = ulinc_campaign_id
         self.ulinc_id = ulinc_id
         self.ulinc_ulinc_campaign_id = ulinc_ulinc_campaign_id
+        self.contact_info = contact_info
         self.tib_id = tib_id
+        self.updated_by = updated_by
 
     # Primary Keys
     contact_id = Column(String(36), primary_key=True, nullable=False)
