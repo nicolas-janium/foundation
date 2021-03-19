@@ -1,8 +1,8 @@
 """first revision and model creation
 
-Revision ID: 83dd985ca947
+Revision ID: e7423b0b53b7
 Revises: 
-Create Date: 2021-03-15 09:27:58.355915
+Create Date: 2021-03-19 11:13:39.601283
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '83dd985ca947'
+revision = 'e7423b0b53b7'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -22,21 +22,21 @@ def upgrade():
     sa.Column('account_type_id', sa.Integer(), nullable=False),
     sa.Column('account_type_name', sa.String(length=128), nullable=False),
     sa.Column('account_type_description', sa.String(length=256), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.PrimaryKeyConstraint('account_type_id')
     )
     op.create_table('action_type',
     sa.Column('action_type_id', sa.Integer(), nullable=False),
     sa.Column('action_type_name', sa.String(length=64), nullable=False),
     sa.Column('action_type_description', sa.String(length=512), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.PrimaryKeyConstraint('action_type_id')
     )
     op.create_table('contact_source_type',
     sa.Column('contact_source_type_id', sa.Integer(), nullable=False),
     sa.Column('contact_source_type_name', sa.String(length=128), nullable=False),
     sa.Column('contact_source_type_description', sa.String(length=256), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.PrimaryKeyConstraint('contact_source_type_id')
     )
     op.create_table('cookie_type',
@@ -44,7 +44,7 @@ def upgrade():
     sa.Column('cookie_type_name', sa.String(length=128), nullable=False),
     sa.Column('cookie_type_description', sa.String(length=256), nullable=True),
     sa.Column('cookie_type_website_url', sa.String(length=512), nullable=True),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.PrimaryKeyConstraint('cookie_type_id')
     )
     op.create_table('email_server',
@@ -55,21 +55,21 @@ def upgrade():
     sa.Column('smtp_ssl_port', sa.Integer(), nullable=False),
     sa.Column('imap_address', sa.String(length=64), nullable=False),
     sa.Column('imap_ssl_port', sa.Integer(), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.PrimaryKeyConstraint('email_server_id')
     )
     op.create_table('janium_campaign_step_type',
     sa.Column('janium_campaign_step_type_id', sa.Integer(), nullable=False),
     sa.Column('janium_campaign_step_type_name', sa.String(length=64), nullable=False),
     sa.Column('janium_campaign_step_type_description', sa.String(length=512), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.PrimaryKeyConstraint('janium_campaign_step_type_id')
     )
     op.create_table('time_zone',
     sa.Column('time_zone_id', sa.String(length=36), nullable=False),
     sa.Column('time_zone_name', sa.String(length=64), nullable=False),
     sa.Column('time_zone_code', sa.String(length=16), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.PrimaryKeyConstraint('time_zone_id')
     )
     op.create_table('user',
@@ -83,8 +83,8 @@ def upgrade():
     sa.Column('primary_email', sa.String(length=256), nullable=False),
     sa.Column('phone', sa.String(length=256), nullable=True),
     sa.Column('additional_contact_info', sa.JSON(), nullable=True),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('user_id')
@@ -93,10 +93,10 @@ def upgrade():
     sa.Column('cookie_id', sa.String(length=36), nullable=False),
     sa.Column('cookie_type_id', sa.Integer(), nullable=True),
     sa.Column('cookie_json_value', sa.JSON(), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
+    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['cookie_type_id'], ['cookie_type.cookie_type_id'], ),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
@@ -106,8 +106,8 @@ def upgrade():
     sa.Column('credentials_id', sa.String(length=36), nullable=False),
     sa.Column('username', sa.String(length=128), nullable=True),
     sa.Column('password', sa.String(length=128), nullable=True),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('credentials_id')
@@ -118,8 +118,8 @@ def upgrade():
     sa.Column('dte_description', sa.String(length=256), nullable=True),
     sa.Column('dte_subject', sa.String(length=512), nullable=False),
     sa.Column('dte_body', sa.Text(), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('dte_id')
@@ -128,8 +128,8 @@ def upgrade():
     sa.Column('login_credential_id', sa.String(length=36), nullable=False),
     sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('login_credential', sa.String(length=45), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
@@ -139,8 +139,8 @@ def upgrade():
     sa.Column('permission_id', sa.String(length=36), nullable=False),
     sa.Column('permission_name', sa.String(length=64), nullable=False),
     sa.Column('permission_description', sa.String(length=512), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('permission_id')
@@ -149,16 +149,30 @@ def upgrade():
     sa.Column('email_config_id', sa.String(length=36), nullable=False),
     sa.Column('credentials_id', sa.String(length=36), nullable=True),
     sa.Column('email_server_id', sa.String(length=36), nullable=True),
+    sa.Column('from_full_name', sa.String(length=64), nullable=False),
+    sa.Column('reply_to_address', sa.String(length=64), nullable=False),
     sa.Column('is_sendgrid', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('sendgrid_sender_id', sa.String(length=36), nullable=True),
     sa.Column('is_email_forward', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['credentials_id'], ['credentials.credentials_id'], ),
     sa.ForeignKeyConstraint(['email_server_id'], ['email_server.email_server_id'], ),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('email_config_id')
+    )
+    op.create_table('permission_hierarchy',
+    sa.Column('permission_hierarchy_id', sa.String(length=36), nullable=False),
+    sa.Column('parent_permission_id', sa.String(length=36), nullable=False),
+    sa.Column('child_permission_id', sa.String(length=36), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
+    sa.Column('updated_by', sa.String(length=36), nullable=False),
+    sa.ForeignKeyConstraint(['child_permission_id'], ['permission.permission_id'], ),
+    sa.ForeignKeyConstraint(['parent_permission_id'], ['permission.permission_id'], ),
+    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
+    sa.PrimaryKeyConstraint('permission_hierarchy_id')
     )
     op.create_table('ulinc_config',
     sa.Column('ulinc_config_id', sa.String(length=36), nullable=False),
@@ -168,8 +182,8 @@ def upgrade():
     sa.Column('new_connection_webhook', sa.String(length=256), nullable=False),
     sa.Column('new_message_webhook', sa.String(length=256), nullable=False),
     sa.Column('send_message_webhook', sa.String(length=256), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['cookie_id'], ['cookie.cookie_id'], ),
     sa.ForeignKeyConstraint(['credentials_id'], ['credentials.credentials_id'], ),
@@ -179,8 +193,8 @@ def upgrade():
     op.create_table('user_permission_map',
     sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('permission_id', sa.String(length=36), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['permission_id'], ['permission.permission_id'], ),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
@@ -191,7 +205,7 @@ def upgrade():
     sa.Column('dte_sender_id', sa.String(length=36), nullable=False),
     sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('email_config_id', sa.String(length=36), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['email_config_id'], ['email_config.email_config_id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('dte_sender_id')
@@ -203,10 +217,10 @@ def upgrade():
     sa.Column('dte_sender_id', sa.String(length=36), nullable=False),
     sa.Column('account_group_name', sa.String(length=128), nullable=False),
     sa.Column('account_group_description', sa.String(length=256), nullable=True),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
+    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_group_manager_id'], ['user.user_id'], ),
     sa.ForeignKeyConstraint(['dte_id'], ['dte.dte_id'], ),
@@ -224,12 +238,12 @@ def upgrade():
     sa.Column('is_sending_emails', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('is_sending_li_messages', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('is_receiving_dte', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('data_enrichment_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('data_enrichment_end_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
+    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
+    sa.Column('data_enrichment_start_date', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('data_enrichment_end_date', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_group_id'], ['account_group.account_group_id'], ),
     sa.ForeignKeyConstraint(['account_type_id'], ['account_type.account_type_id'], ),
@@ -242,8 +256,8 @@ def upgrade():
     op.create_table('user_account_group_map',
     sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('account_group_id', sa.String(length=36), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_group_id'], ['account_group.account_group_id'], ),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
@@ -255,7 +269,7 @@ def upgrade():
     sa.Column('account_id', sa.String(length=36), nullable=False),
     sa.Column('contact_source_type_id', sa.Integer(), nullable=False),
     sa.Column('contact_source_json', sa.JSON(), nullable=False),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
     sa.ForeignKeyConstraint(['contact_source_type_id'], ['contact_source_type.contact_source_type_id'], ),
     sa.PrimaryKeyConstraint('contact_source_id')
@@ -269,10 +283,10 @@ def upgrade():
     sa.Column('is_messenger', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('queue_start_time', sa.DateTime(), nullable=False),
     sa.Column('queue_end_time', sa.DateTime(), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
+    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
     sa.ForeignKeyConstraint(['email_config_id'], ['email_config.email_config_id'], ),
@@ -283,8 +297,8 @@ def upgrade():
     sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('account_id', sa.String(length=36), nullable=False),
     sa.Column('permission_id', sa.String(length=36), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
     sa.ForeignKeyConstraint(['permission_id'], ['permission.permission_id'], ),
@@ -295,8 +309,8 @@ def upgrade():
     op.create_table('user_proxy_map',
     sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('account_id', sa.String(length=36), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
@@ -312,10 +326,10 @@ def upgrade():
     sa.Column('janium_campaign_step_subject', sa.String(length=1000), nullable=True),
     sa.Column('queue_start_time', sa.DateTime(), nullable=False),
     sa.Column('queue_end_time', sa.DateTime(), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
-    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
+    sa.Column('effective_start_date', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('effective_end_date', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['janium_campaign_id'], ['janium_campaign.janium_campaign_id'], ),
     sa.ForeignKeyConstraint(['janium_campaign_step_type_id'], ['janium_campaign_step_type.janium_campaign_step_type_id'], ),
@@ -330,8 +344,8 @@ def upgrade():
     sa.Column('ulinc_is_active', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('ulinc_ulinc_campaign_id', sa.String(length=16), nullable=False),
     sa.Column('ulinc_is_messenger', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
     sa.ForeignKeyConstraint(['janium_campaign_id'], ['janium_campaign.janium_campaign_id'], ),
@@ -348,8 +362,8 @@ def upgrade():
     sa.Column('ulinc_ulinc_campaign_id', sa.String(length=16), nullable=False),
     sa.Column('tib_id', sa.String(length=36), nullable=True),
     sa.Column('contact_info', sa.JSON(), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text("'9999-12-31 10:10:10'"), nullable=True),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
     sa.ForeignKeyConstraint(['contact_source_id'], ['contact_source.contact_source_id'], ),
@@ -364,7 +378,7 @@ def upgrade():
     sa.Column('action_type_id', sa.Integer(), nullable=False),
     sa.Column('action_timestamp', sa.DateTime(), nullable=True),
     sa.Column('action_message', sa.Text(), nullable=True),
-    sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['action_type_id'], ['action_type.action_type_id'], ),
     sa.ForeignKeyConstraint(['contact_id'], ['contact.contact_id'], ),
     sa.PrimaryKeyConstraint('action_id')
@@ -388,6 +402,7 @@ def downgrade():
     op.drop_table('dte_sender')
     op.drop_table('user_permission_map')
     op.drop_table('ulinc_config')
+    op.drop_table('permission_hierarchy')
     op.drop_table('email_config')
     op.drop_table('permission')
     op.drop_table('login_credential')

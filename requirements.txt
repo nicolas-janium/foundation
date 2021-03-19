@@ -3,6 +3,7 @@ fuzzywuzzy
 python-Levenshtein
 nameparser
 sqlalchemy
+SQLAlchemy-Utc
 pymysql
 lastpass-python
 beautifulsoup4

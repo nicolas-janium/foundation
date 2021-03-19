@@ -23,7 +23,9 @@ def main(request):
 
             if ctype == 'text/plain' and 'attachment' not in cdispo:
                 body = part.get_payload(decode=True)  # decode
-                break
+            elif ctype == 'text/html' and 'attachment' not in cdispo:
+                body = part.get_payload(decode=True)  # decode
+                break # Default to html body
     else:
         body = email_message.get_payload(decode=True)
 
@@ -31,9 +33,9 @@ def main(request):
         print(body)
 
     for credentials in session.query(Credentials).filter(Credentials.username == to_addr).all():
-        if client := credentials.email_config.email_config_client:
-            for contact in client.contacts:
-                if from_addr in contact.emails:
+        if account := credentials.email_config.email_config_account:
+            for contact in account.contacts:
+                if from_addr in contact.get_emails():
                     new_action = Action(str(uuid4()), contact.contact_id, 6, mtn_time, body)
                     session.add(new_action)
                     session.commit()

@@ -4,6 +4,7 @@ from datetime import datetime
 import logging
 import sys
 import os
+import pytz
 
 import holidays
 from google.cloud import pubsub_v1
@@ -33,12 +34,15 @@ else:
 
 PROJECT_ID = os.getenv('PROJECT_ID')
 
+mtn_tz = pytz.timezone('US/Mountain')
+mtn_time = datetime.now(pytz.timezone('UTC')).astimezone(mtn_tz)
+
 def main(event, context):
-    # Instantiates a Pub/Sub client
+    # Instantiates a Pub/Sub account
     publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path(PROJECT_ID, 'janium-send-email-topic')
 
-    session = Session()
+    session = get_session()
 
     now = datetime.now()
     now_date = now.date()
@@ -47,16 +51,17 @@ def main(event, context):
     us_holidays.append(datetime(now.year, 12, 31)) # New Years Eve
     us_holidays.append(datetime(now.year, 1, 1)) # New Years Day
 
-    clients = session.query(Client).filter(Client.is_active == 1)\
-                                   .filter(Client.is_sending_emails == 1)\
-                                   .filter(Client.email_config_id != Email_config.unassigned_email_config_id)\
-                                   .all()
+    accounts = session.query(Account).filter(and_(
+        and_(Account.effective_start_date < mtn_time, Account.effective_end_date > mtn_time),
+        Account.is_sending_emails,
+        Account.email_config_id != Email_config.unassigned_email_config_id
+    )).all()
 
     if now_date not in us_holidays:
-        clients_list = []
-        for client in clients:
+        accounts_list = []
+        for account in accounts:
             message_json = json.dumps(
-                {"data": {"client_id": client.client_id}}
+                {"data": {"account_id": account.account_id}}
             )
             message_bytes = message_json.encode('utf-8')
 
@@ -66,14 +71,14 @@ def main(event, context):
                     publish_future = publisher.publish(topic_path, data=message_bytes)
                     publish_future.result()
                 else:
-                    payload = {"client_id": client.client_id}
+                    payload = {"account_id": account.account_id}
                     payload = json.dumps(payload)
                     payload = base64.b64encode(str(payload).encode("utf-8"))
-                    function.main({"data": payload}, 1)
-                clients_list.append({"client_id": client.client_id, "client_full_name": client.full_name})
+                    # function.main({"data": payload}, 1)
+                accounts_list.append({"account_id": account.account_id})
             except Exception as err:
                 logger.error(str(err))
-        logger.info('Messages to janium-send-dte-topic published for clients {}'.format(clients_list))
+        logger.info('Messages to janium-send-email-topic published for accounts {}'.format(accounts_list))
 
 if __name__ == '__main__':
     payload = {

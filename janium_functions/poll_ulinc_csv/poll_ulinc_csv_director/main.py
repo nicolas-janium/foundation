@@ -51,25 +51,25 @@ def main(event, context):
     accounts_list = []
     for account in accounts:
         print(account.account_id)
-        # message_json = json.dumps(
-        #     {"account_id": account.account_id}
-        # )
-        # message_bytes = message_json.encode('utf-8')
+        message_json = json.dumps(
+            {"account_id": account.account_id}
+        )
+        message_bytes = message_json.encode('utf-8')
 
-        # ## Publish message to send-dte-function ###
-        # try:
-        #     if not os.getenv('LOCAL_DEV'):
-        #         publish_future = publisher.publish(topic_path, data=message_bytes)
-        #         publish_future.result()
-        #     else:
-        #         payload = {"account_id": account.account_id}
-        #         payload = json.dumps(payload)
-        #         payload = base64.b64encode(str(payload).encode("utf-8"))
-        #         return function.main({"data": payload}, 1)
-        #     clients_list.append({"account_id": account.account_id})
-        #     # return 'OKKKK'
-        # except Exception as err:
-        #     logger.error(str(err))
+        ## Publish message to send-dte-function ###
+        try:
+            if not os.getenv('LOCAL_DEV'):
+                publish_future = publisher.publish(topic_path, data=message_bytes)
+                publish_future.result()
+            else:
+                payload = {"account_id": account.account_id}
+                payload = json.dumps(payload)
+                payload = base64.b64encode(str(payload).encode("utf-8"))
+                return function.main({"data": payload}, 1)
+            accounts_list.append({"account_id": account.account_id})
+            # return 'OKKKK'
+        except Exception as err:
+            logger.error(str(err))
     logger.info('Messages to janium-poll-ulinc-csv-topic published for accounts {}'.format(accounts_list))
 
 if __name__ == '__main__':

@@ -12,11 +12,12 @@ from email.mime.text import MIMEText
 from email.utils import make_msgid
 from pprint import pprint
 from uuid import uuid4
+import pytz
 
 import requests
 from bs4 import BeautifulSoup as Soup
 from html2text import html2text
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from workdays import networkdays
 
 if not os.getenv('LOCAL_DEV'):
@@ -82,7 +83,7 @@ def add_footer(email_html, contact_id, contact_email):
 
     return str(soup).replace(r'{opt_out_url}', opt_out_url)
 
-def send_email_with_sendgrid(details, session):
+def send_email_with_sendgrid(details, session, account_local_time):
     url = "https://api.sendgrid.com/v3/mail/send"
 
     action_id = str(uuid4())
@@ -142,15 +143,15 @@ def send_email_with_sendgrid(details, session):
             if details['testing'] == 'true':
                 pass
             else:
-                action = Action(action_id, details["contact_id"], 4, mtn_time, message)
+                action = Action(action_id, details["contact_id"], 4, account_local_time, message)
                 session.add(action)
                 session.commit()
             return details['contact_email']
     except Exception as err:
-        logger.error(str("There was an error while sending an email to {} for client {}. Error: {}".format(details['contact_email'], sender['from_name'], err)))
+        logger.error(str("There was an error while sending an email to {} for account {}. Error: {}".format(details['contact_email'], sender['from_name'], err)))
         return None
 
-def send_email(details, session):
+def send_email(details, session, account_local_time):
     username, password = details['email_creds']
 
     recipient = details['contact_email']
@@ -163,7 +164,7 @@ def send_email(details, session):
 
 
     main_email['Subject'] = details['email_subject']
-    main_email['From'] = str(Header('{} <{}>')).format(details['client_full_name'], username)
+    main_email['From'] = str(Header('{} <{}>')).format(details['from_full_name'], username)
     main_email['To'] = recipient
     main_email['Message-ID'] = make_msgid()
     main_email.add_header('Action-ID', action_id) 
@@ -184,55 +185,136 @@ def send_email(details, session):
             server.starttls()
             server.login(username, password)
             server.send_message(main_email)
-            # print("Sent an email to {} for client {}".format(details['contactid'], details['client_fullname']))
+            # print("Sent an email to {} for account {}".format(details['contactid'], details['account_fullname']))
 
-        action = Action(action_id, contact_id, 4, mtn_time, email_html)
+        action = Action(action_id, contact_id, 4, account_local_time, email_html)
         session.add(action)
         session.commit()
         return details['contact_email']
 
     except Exception as err:
-        logger.error(str("There was an error while sending an email to {} for client {}. Error: {}".format(details['contact_email'], details['client_full_name'], err)))
+        logger.error(str("There was an error while sending an email to {} for account {}. Error: {}".format(details['contact_email'], details['account_full_name'], err)))
         return None
 
-def get_email_targets(client, janium_campaign, is_sendgrid):
-    steps = janium_campaign.janium_campaign_steps.order_by(Janium_campaign_step.janium_campaign_step_delay).all()
+def get_email_targets(account, janium_campaign, is_sendgrid, account_local_time):
+    steps = janium_campaign.janium_campaign_steps.filter(Janium_campaign_step.janium_campaign_step_type_id == 2).order_by(Janium_campaign_step.janium_campaign_step_delay).all()
+    steps_list = []
+    for i, step in enumerate(steps):
+        steps_list.append(
+            {
+                'rank': i + 1,
+                'delay': step.janium_campaign_step_delay,
+                'subject': step.janium_campaign_step_subject,
+                'body': step.janium_campaign_step_body
+            }
+        )
 
     contacts = [
         contact 
         for contact 
-        in janium_campaign.contacts.filter(Contact.email1 != None).order_by(Contact.full_name).all() 
-        if not contact.actions.filter(Action.action_type_id.in_([2,6,7,11,15])).first()
+        in janium_campaign.contacts
+        if not contact.actions.filter(Action.action_type_id.in_([7,15])).first() and len(contact.get_emails()) > 0
     ]
+
     email_targets_list = []
     for contact in contacts:
-        cnxn_date = contact.actions.filter(or_(Action.action_type_id == 1, Action.action_type_id == 14)).order_by(Action.action_type_id.desc()).first().action_timestamp
-        for i, step in enumerate(steps):
-            if step.janium_campaign_step_type_id == 2:
+        sent_emails = contact.actions.filter(Action.action_type_id == 4).order_by(Action.action_timestamp.desc()).all()
+        num_sent_emails = 0
+        if sent_emails:
+            last_sent_email = sent_emails[0]
+            num_sent_emails = len(sent_emails)
+
+        if previous_received_message := contact.actions.filter(or_(Action.action_type_id == 2, Action.action_type_id == 6)).order_by(Action.action_timestamp.desc()).first():
+            if continue_campaign_action := contact.actions.filter(Action.action_type_id == 14).order_by(Action.action_timestamp.desc()).first():
+                if previous_received_message.action_timestamp > continue_campaign_action.action_timestamp:
+                    continue
+                else:
+                    pass
+            else:
+                continue
+        else:
+            pass
+
+        if cnxn_action := contact.actions.filter(or_(Action.action_type_id == 1)).order_by(Action.action_timestamp.desc()).first():
+            if continue_campaign_action := contact.actions.filter(Action.action_type_id == 14).order_by(Action.action_timestamp.desc()).first():
+                cnxn_timestamp = cnxn_action.action_timestamp
+                days_to_add = networkdays(last_sent_email.action_timestamp, continue_campaign_action.action_timestamp) - 1
+                while days_to_add > 0:
+                    cnxn_timestamp += timedelta(days=1)
+                    if cnxn_timestamp.weekday() >= 5: # sunday = 6
+                        continue
+                    days_to_add -= 1
+            else:
+                cnxn_timestamp = cnxn_action.action_timestamp
+            day_diff = networkdays(cnxn_timestamp, account_local_time) - 1
+
+            for i, step in enumerate(steps_list):
                 add_contact = False
                 if i + 1 < len(steps):
-                    if step.janium_campaign_step_delay <= networkdays(cnxn_date, mtn_time) < steps[i + 1].janium_campaign_step_delay:
-                        add_contact = True
+                    if step['delay'] <= day_diff < steps_list[i + 1]['delay']:
+                        if num_sent_emails < step['rank']:
+                            add_contact = True
+                        else:
+                            continue
+                    else: 
+                        continue
                 else:
-                    if step.janium_campaign_step_delay <= networkdays(cnxn_date, mtn_time) < step.janium_campaign_step_delay + 2:
-                        add_contact = True
-                if add_contact:
-                    email_targets_list.append(
-                        {
-                            "is_sendgrid": is_sendgrid,
-                            "sendgrid_sender_id": client.email_config.sendgrid_sender_id if is_sendgrid else None,
-                            "client_full_name": client.full_name,
-                            "smtp_address": None if is_sendgrid else client.email_config.email_server.smtp_address,
-                            "smtp_port": None if is_sendgrid else client.email_config.email_server.smtp_tls_port,
-                            "email_creds": None if is_sendgrid else (client.email_config.credentials.username, client.email_config.credentials.password),
-                            "contact_id": contact.contact_id,
-                            "contact_first_name": contact.first_name,
-                            "contact_full_name": contact.full_name,
-                            "contact_email": contact.email1,
-                            "email_subject": step.janium_campaign_step_subject,
-                            "email_body": step.janium_campaign_step_body                                
-                        }
-                    )
+                    if step['delay'] <= day_diff <= step['delay'] + 1:
+                        if num_sent_emails < step['rank']:
+                            add_contact = True
+                        else:
+                            continue
+                    else:
+                        continue
+        else: # Kendo stuff? I guess
+            if cnxn_req_action := contact.actions.filter(Action.action_type_id == 19).order_by(Action.action_timestamp.desc()).first():
+                if len(contact.get_emails()):
+                    cnxn_req_timestamp = cnxn_req_action.action_timestamp
+                    day_diff = networkdays(cnxn_req_timestamp, account_local_time) - 1
+                    # print(day_diff)
+
+                    steps = janium_campaign.janium_campaign_steps.filter(Janium_campaign_step.janium_campaign_step_type_id == 4).order_by(Janium_campaign_step.janium_campaign_step_delay).all()
+                    print(len(steps))
+                    for i, step in enumerate(steps):
+                        print(step.janium_campaign_step_delay)
+                        add_contact = False
+                        if i + 1 < len(steps):
+                            if step.janium_campaign_step_delay <= day_diff < steps[i + 1].janium_campaign_step_delay:
+                                if num_sent_emails < i + 1:
+                                    add_contact = True
+                            #     else:
+                            #         continue
+                            # else:
+                            #     continue
+                        else:
+                            # print(day_diff)
+                            if step.janium_campaign_step_delay <= day_diff <= step.janium_campaign_step_delay + 1:
+                                # print(day_diff)
+                                if num_sent_emails < i + 1:
+                                    add_contact = True
+                            #     else:
+                            #         continue
+                            # else:
+                            #     continue
+            else:
+                continue
+        if add_contact:
+            email_targets_list.append(
+                {
+                    "is_sendgrid": is_sendgrid,
+                    "sendgrid_sender_id": account.email_config.sendgrid_sender_id if is_sendgrid else None,
+                    "from_full_name": account.email_config.from_full_name,
+                    "smtp_address": None if is_sendgrid else account.email_config.email_server.smtp_address,
+                    "smtp_port": None if is_sendgrid else account.email_config.email_server.smtp_tls_port,
+                    "email_creds": None if is_sendgrid else (account.email_config.credentials.username, account.email_config.credentials.password),
+                    "contact_id": contact.contact_id,
+                    "contact_first_name": contact.contact_info['ulinc']['first_name'],
+                    "contact_full_name": str(contact.contact_info['ulinc']['first_name'] + ' ' + contact.contact_info['ulinc']['last_name']),
+                    "contact_email": contact.get_emails()[0],
+                    "email_subject": step['subject'],
+                    "email_body": step['body']
+                }
+            )
     return email_targets_list
 
 def main(event, context):
@@ -240,27 +322,28 @@ def main(event, context):
     payload_json = json.loads(pubsub_message)
 
     session = get_session()
-    client = session.query(Client).filter(Client.client_id == payload_json['client_id']).first()
+    account = session.query(Account).filter(Account.account_id == payload_json['account_id']).first()
 
-    is_sendgrid = True if client.email_config.is_sendgrid and client.email_config.sendgrid_sender_id else False
-    for janium_campaign in client.janium_campaigns.filter(Janium_campaign.is_active == 1).all():
+    account_local_time = datetime.now(pytz.timezone('UTC')).astimezone(pytz.timezone(account.time_zone.time_zone_code)).replace(tzinfo=None)
 
-        email_targets_list = get_email_targets(client, janium_campaign, is_sendgrid)
-        pprint(email_targets_list)
+    is_sendgrid = True if account.email_config.is_sendgrid and account.email_config.sendgrid_sender_id else False
+    for janium_campaign in account.janium_campaigns.filter(and_(Janium_campaign.effective_start_date < account_local_time, Janium_campaign.effective_end_date > account_local_time)).all():
+        email_targets_list = get_email_targets(account, janium_campaign, is_sendgrid, account_local_time)
+        # pprint(email_targets_list)
 
         recipient_list = []
         for email_target in email_targets_list:
             if email_target['is_sendgrid']:
-                send_email_res = send_email_with_sendgrid(email_target, session)
+                send_email_res = send_email_with_sendgrid(email_target, session, account_local_time)
             else:
-                send_email_res = send_email(email_target, session)
+                send_email_res = send_email(email_target, session, account_local_time)
             recipient_list.append({"contact_full_name": email_target['contact_full_name'], "contact_email_address": email_target['contact_email'], "contact_id": email_target['contact_id']})
-        logger_message = 'Sent emails to {} for client {} in campaign {} with {}'.format(recipient_list, client.full_name, janium_campaign.janium_campaign_name, 'sendgrid' if is_sendgrid else 'email app')
+        logger_message = 'Sent emails to {} for account {} in campaign {} with {}'.format(recipient_list, account.account_id, janium_campaign.janium_campaign_name, 'sendgrid' if is_sendgrid else 'email app')
         logger.info(logger_message)
 
 if __name__ == '__main__':
     payload = {
-        "client_id": "67e736f3-9f35-4bf0-992f-1e8a5afa261a"
+        "account_id": "6bc4e64d-b32f-40a9-92ad-52a32f62e455"
     }
     payload = json.dumps(payload)
     payload = base64.b64encode(str(payload).encode("utf-8"))
@@ -268,3 +351,9 @@ if __name__ == '__main__':
         "data": payload
     }
     main(event, 1)
+    # session = get_session()
+    # action1 = session.query(Action).filter(Action.action_type_id == 1).first()
+    # action2 = session.query(Action).filter(Action.action_type_id == 11).first()
+
+    # print(networkdays(action1.action_timestamp, datetime.now(), holidays=[]))
+    # print(networkdays(action1.action_timestamp, action2.action_timestamp, holidays=[]))
