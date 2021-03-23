@@ -34,8 +34,6 @@ else:
 
 PROJECT_ID = os.getenv('PROJECT_ID')
 
-mtn_tz = pytz.timezone('US/Mountain')
-mtn_time = datetime.now(pytz.timezone('UTC')).astimezone(mtn_tz)
 
 def main(event, context):
     # Instantiates a Pub/Sub account
@@ -52,9 +50,8 @@ def main(event, context):
     us_holidays.append(datetime(now.year, 1, 1)) # New Years Day
 
     accounts = session.query(Account).filter(and_(
-        and_(Account.effective_start_date < mtn_time, Account.effective_end_date > mtn_time),
-        Account.is_sending_emails,
-        Account.email_config_id != Email_config.unassigned_email_config_id
+        and_(Account.effective_start_date < datetime.utcnow(), Account.effective_end_date > datetime.utcnow()),
+        Account.is_sending_emails
     )).all()
 
     if now_date not in us_holidays:

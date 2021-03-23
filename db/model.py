@@ -1,5 +1,6 @@
 import json
 import os
+import pytz
 from datetime import datetime, timedelta
 
 from sqlalchemy import (JSON, Boolean, Column, Computed, DateTime, ForeignKey,
@@ -364,6 +365,19 @@ class Janium_campaign(Base):
     contacts = relationship('Contact', backref=backref('contact_janium_campaign', uselist=False), uselist=True, lazy='dynamic')
     ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('parent_janium_campaign', uselist=False), uselist=True, lazy=True)
     janium_campaign_steps = relationship('Janium_campaign_step', backref=backref('parent_janium_campaign', uselist=False), uselist=True, lazy='dynamic')
+    email_config = relationship('Email_config', backref=backref('email_config_janium_campaign', uselist=False), uselist=False, lazy=True)
+
+    def get_effective_dates(self, timezone):
+        start_date = pytz.utc.localize(self.effective_start_date).astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        end_date = pytz.utc.localize(self.effective_end_date).astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        # start_date = self.effective_start_date.astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        # end_date = self.effective_end_date.astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        return {"start": start_date, "end": end_date}
+    
+    def get_queue_times(self, timezone):
+        start_date = pytz.utc.localize(self.queue_start_time).astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        end_date = pytz.utc.localize(self.queue_end_time).astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        return {"start": start_date, "end": end_date}
 
 class Janium_campaign_step(Base):
     __tablename__ = 'janium_campaign_step'
@@ -508,7 +522,16 @@ class Contact(Base):
 
         emails = []
         for key in contact_info:
-            emails.append(contact_info[key]['email'])
+            if key == 'ulinc':
+                emails.insert(1, contact_info[key]['email'])
+            elif key == 'kendo':
+                if work_email := contact_info[key]['work_email']:
+                    if work_email['is_valid']:
+                        emails.insert(0, work_email['value'])
+                    else:
+                        emails.append(work_email['value'])
+                if private_email := contact_info[key]['private_email']:
+                    emails.append(private_email['value'])
         return emails
 
 # class Contact_info(Base):
@@ -538,12 +561,13 @@ class Contact(Base):
 class Action(Base):
     __tablename__ = 'action'
 
-    def __init__(self, action_id, contact_id, action_type_id, action_timestamp, action_message):
+    def __init__(self, action_id, contact_id, action_type_id, action_timestamp, action_message, to_email_addr=None):
         self.action_id = action_id
         self.contact_id = contact_id
         self.action_type_id = action_type_id
         self.action_timestamp = action_timestamp
         self.action_message = action_message
+        self.to_email_addr = to_email_addr
 
     # Primary Keys
     action_id = Column(String(36), primary_key=True, nullable=False)
@@ -555,6 +579,7 @@ class Action(Base):
     # Common Columns
     action_timestamp = Column(DateTime, nullable=True)
     action_message = Column(Text, nullable=True)
+    to_email_addr = Column(String(64), nullable=True)
 
     # Table Metadata
     date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))

@@ -1,14 +1,17 @@
+import json
 import os
+import pytz
 from datetime import datetime, timedelta
 
 from sqlalchemy import (JSON, Boolean, Column, Computed, DateTime, ForeignKey,
-                        Integer, String, Text, create_engine, engine, PrimaryKeyConstraint, Table)
+                        Integer, PrimaryKeyConstraint, String, Table, Text,
+                        create_engine, engine)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, sessionmaker
 from sqlalchemy.sql import false, func, text, true
 
 Base = declarative_base()
-mtn_time = datetime.utcnow() - timedelta(hours=7)
+
 
 def get_session(is_remote=False, environment=None):
     if not os.getenv('LOCAL_DEV'):
@@ -82,22 +85,23 @@ class Account(Base):
     is_sending_li_messages = Column(Boolean, server_default=false(), nullable=False)
     is_receiving_dte = Column(Boolean, server_default=false(), nullable=False)
 
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    effective_start_date = Column(DateTime, server_default=func.now())
-    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    data_enrichment_start_date = Column(DateTime, server_default=func.now())
-    data_enrichment_end_date = Column(DateTime, server_default=func.now())
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+    effective_start_date = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    effective_end_date = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+    data_enrichment_start_date = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    data_enrichment_end_date = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
     # users = relationship('User_account_map', back_populates='account')
-    users = relationship('User_account_map') 
+    # users = relationship('User_account_map')
     janium_campaigns = relationship('Janium_campaign', backref=backref('janium_campaign_account', uselist=False), uselist=True, lazy='dynamic')
     ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('ulinc_campaign_account', uselist=False), uselist=True, lazy='dynamic')
     contacts = relationship('Contact', backref=backref('contact_account', uselist=False), uselist=True, lazy='dynamic')
     email_config = relationship('Email_config', backref=backref('email_config_account', uselist=False), uselist=False, lazy=True)
     ulinc_config = relationship('Ulinc_config', uselist=False, lazy=True)
+    time_zone = relationship('Time_zone', backref=backref('tz_account', uselist=True), uselist=False, lazy=True)
 
 class Account_type(Base):
     __tablename__ = 'account_type'
@@ -110,7 +114,7 @@ class Account_type(Base):
     account_type_id = Column(Integer, primary_key=True, nullable=False)
     account_type_name = Column(String(128), nullable=False)
     account_type_description = Column(String(256), nullable=False)
-    date_added = Column(DateTime, server_default=func.now())
+    date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
 
 class User(Base):
     __tablename__ = 'user'
@@ -141,14 +145,14 @@ class User(Base):
     phone = Column(String(256), nullable=True)
     additional_contact_info = Column(JSON, nullable=True)
 
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    # updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # accounts = relationship('User_account_map', back_populates='account_user')
     # permissions = relationship('User_permission_map', back_populates='permission_user')
-    accounts = relationship('User_account_map')
-    permissions = relationship('User_permission_map')
+    # accounts = relationship('User_account_map')
+    # permissions = relationship('User_permission_map')
 
 
 class User_account_map(Base):
@@ -163,15 +167,15 @@ class User_account_map(Base):
     account_id = Column(String(36), ForeignKey('account.account_id'), primary_key=True, nullable=False)
     permission_id = Column(String(36), ForeignKey('permission.permission_id'), primary_key=True, nullable=False)
 
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    # updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # user = relationship('User', back_populates='user_accounts', foreign_keys=[user_id])
     # account = relationship('Account', back_populates='account_users', foreign_keys=[account_id])
-    user = relationship('User', foreign_keys=[user_id])
+    # user = relationship('User', foreign_keys=[user_id])
     # user = relationship('User', foreign_keys='User_account_map.user_id')
-    account = relationship('Account', foreign_keys=[account_id])
+    # account = relationship('Account', foreign_keys=[account_id])
 
 
 class User_proxy_map(Base):
@@ -184,14 +188,14 @@ class User_proxy_map(Base):
     user_id = Column(String(36), ForeignKey('user.user_id'), primary_key=True, nullable=False)
     account_id = Column(String(36), ForeignKey('account.account_id'), primary_key=True, nullable=False)
 
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # user = relationship('User', back_populates='proxy_accounts', foreign_keys=[user_id])
     # account = relationship('Account', back_populates='proxy_users')
-    user = relationship('User', foreign_keys=[user_id])
-    account = relationship('Account', foreign_keys=[account_id])
+    # user = relationship('User', foreign_keys=[user_id])
+    # account = relationship('Account', foreign_keys=[account_id])
 
 class User_permission_map(Base):
     __tablename__ = 'user_permission_map'
@@ -203,14 +207,14 @@ class User_permission_map(Base):
     user_id = Column(String(36), ForeignKey('user.user_id'), primary_key=True, nullable=False)
     permission_id = Column(String(36), ForeignKey('permission.permission_id'), primary_key=True, nullable=False)
 
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    # updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # user = relationship('User', back_populates='permissions', foreign_keys=[user_id])
     # permission = relationship('Permission', back_populates='permission_users')
-    user = relationship('User', foreign_keys=[user_id])
-    permission = relationship('Permission', foreign_keys=[permission_id])
+    # user = relationship('User', foreign_keys=[user_id])
+    # permission = relationship('Permission', foreign_keys=[permission_id])
 
 class Permission(Base):
     __tablename__ = 'permission'
@@ -224,8 +228,26 @@ class Permission(Base):
     permission_name = Column(String(64), nullable=False)
     permission_description = Column(String(512), nullable=False)
 
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+    updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
+
+    # users = relationship('User_permission_map', back_populates='permission_user')
+
+class Permission_hierarchy(Base):
+    __tablename__ = 'permission_hierarchy'
+
+    def __init__(self, permission_hierarchy_id, parent_permission_id, child_permission_id):
+        self.permission_hierarchy_id = permission_hierarchy_id
+        self.parent_permission_id = parent_permission_id
+        self.child_permission_id = child_permission_id
+    
+    permission_hierarchy_id = Column(String(36), primary_key=True, nullable=False)
+    parent_permission_id = Column(String(36), ForeignKey('permission.permission_id'), nullable=False)
+    child_permission_id = Column(String(36), ForeignKey('permission.permission_id'), nullable=False)
+
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # users = relationship('User_permission_map', back_populates='permission_user')
@@ -243,8 +265,8 @@ class Login_credential(Base):
     user_id = Column(String(36), ForeignKey('user.user_id'), nullable=False)
     login_credential = Column(String(45), nullable=False)
 
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
 
@@ -277,10 +299,10 @@ class Account_group(Base):
     # is_active = Column(Boolean, nullable=False, server_default=false())
 
     # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    effective_start_date = Column(DateTime, server_default=func.now())
-    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+    effective_start_date = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    effective_end_date = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
@@ -299,8 +321,8 @@ class User_account_group_map(Base):
     user_id = Column(String(36), ForeignKey('user.user_id'), primary_key=True, nullable=False)
     account_group_id = Column(String(36), ForeignKey('account_group.account_group_id'), primary_key=True, nullable=False)
 
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
 
@@ -333,16 +355,28 @@ class Janium_campaign(Base):
     queue_end_time = Column(DateTime, nullable=False)
 
     # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    effective_start_date = Column(DateTime, server_default=func.now())
-    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+    effective_start_date = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    effective_end_date = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
     contacts = relationship('Contact', backref=backref('contact_janium_campaign', uselist=False), uselist=True, lazy='dynamic')
     ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('parent_janium_campaign', uselist=False), uselist=True, lazy=True)
     janium_campaign_steps = relationship('Janium_campaign_step', backref=backref('parent_janium_campaign', uselist=False), uselist=True, lazy='dynamic')
+
+    def get_effective_dates(self, timezone):
+        start_date = pytz.utc.localize(self.effective_start_date).astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        end_date = pytz.utc.localize(self.effective_end_date).astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        # start_date = self.effective_start_date.astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        # end_date = self.effective_end_date.astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        return {"start": start_date, "end": end_date}
+    
+    def get_queue_times(self, timezone):
+        start_date = pytz.utc.localize(self.queue_start_time).astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        end_date = pytz.utc.localize(self.queue_end_time).astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
+        return {"start": start_date, "end": end_date}
 
 class Janium_campaign_step(Base):
     __tablename__ = 'janium_campaign_step'
@@ -374,10 +408,10 @@ class Janium_campaign_step(Base):
     queue_end_time = Column(DateTime, nullable=False)
 
     # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    effective_start_date = Column(DateTime, server_default=func.now())
-    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+    effective_start_date = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    effective_end_date = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
@@ -402,7 +436,7 @@ class Janium_campaign_step_type(Base):
     janium_campaign_step_type_description = Column(String(512), nullable=False)
 
     # Table Metadata
-    date_added = Column(DateTime, server_default=func.now())
+    date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
 
     # SQLAlchemy Relationships and Backreferences
 
@@ -435,8 +469,8 @@ class Ulinc_campaign(Base):
     ulinc_is_messenger = Column(Boolean, nullable=False, server_default=false())
 
     # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
@@ -474,8 +508,8 @@ class Contact(Base):
     contact_info = Column(JSON, nullable=False)
 
     # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
@@ -483,7 +517,12 @@ class Contact(Base):
     # info = relationship('Contact_info', uselist=True, lazy='dynamic')
 
     def get_emails(self):
-        return [self.email1, self.email2, self.email3]
+        contact_info = self.contact_info
+
+        emails = []
+        for key in contact_info:
+            emails.append(contact_info[key]['email'])
+        return emails
 
 # class Contact_info(Base):
 #     __tablename__ = 'contact_info'
@@ -502,8 +541,8 @@ class Contact(Base):
 #     contact_info_json = Column(JSON, nullable=False)
 
 #     # Table Metadata
-#     asOfStartTime = Column(DateTime, server_default=func.now())
-#     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+#     asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+#     asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
 #     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
 #     # SQLAlchemy Relationships and Backreferences
@@ -512,12 +551,13 @@ class Contact(Base):
 class Action(Base):
     __tablename__ = 'action'
 
-    def __init__(self, action_id, contact_id, action_type_id, action_timestamp, action_message):
+    def __init__(self, action_id, contact_id, action_type_id, action_timestamp, action_message, to_email_addr=None):
         self.action_id = action_id
         self.contact_id = contact_id
         self.action_type_id = action_type_id
         self.action_timestamp = action_timestamp
         self.action_message = action_message
+        self.to_email_addr = to_email_addr
 
     # Primary Keys
     action_id = Column(String(36), primary_key=True, nullable=False)
@@ -529,9 +569,10 @@ class Action(Base):
     # Common Columns
     action_timestamp = Column(DateTime, nullable=True)
     action_message = Column(Text, nullable=True)
+    to_email_addr = Column(String(64), nullable=True)
 
     # Table Metadata
-    date_added = Column(DateTime, server_default=func.now())
+    date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
 
     # SQLAlchemy Relationships and Backreferences
     action_type = relationship('Action_type', uselist=False, lazy=True)
@@ -555,7 +596,7 @@ class Action_type(Base): # (messenger_origin_message, new_connection_date{backda
     action_type_description = Column(String(512), nullable=False)
 
     # Table Metadata
-    date_added = Column(DateTime, server_default=func.now())
+    date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
 
     # SQLAlchemy Relationships and Backreferences
 
@@ -581,7 +622,7 @@ class Contact_source(Base):
     contact_source_json = Column(JSON, nullable=False)
 
     # Table Metadata
-    date_added = Column(DateTime, server_default=func.now())
+    date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
 
     # SQLAlchemy Relationships and Backreferences
     contacts = relationship('Contact', backref=backref('contact_source', uselist=False), lazy=False)
@@ -604,7 +645,7 @@ class Contact_source_type(Base):
     contact_source_type_description = Column(String(256), nullable=False)
 
     # Table Metadata
-    date_added = Column(DateTime, server_default=func.now())
+    date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
 
     # SQLAlchemy Relationships and Backreferences
 
@@ -630,10 +671,10 @@ class Contact_source_type(Base):
 #     webhook_response_value = Column(JSON, nullable=False)
 
 #     # Table Metadata
-#     asOfStartTime = Column(DateTime, server_default=func.now())
-#     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-#     effective_start_date = Column(DateTime, server_default=func.now())
-#     effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+#     asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+#     asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+#     effective_start_date = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+#     effective_end_date = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
 #     updated_by = Column(String(36), server_default=text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"))
 
 #     # SQLAlchemy Relationships and Backreferences
@@ -657,10 +698,10 @@ class Contact_source_type(Base):
 #     webhook_response_type_description = Column(String(512), nullable=False)
 
 #     # Table Metadata
-#     asOfStartTime = Column(DateTime, server_default=func.now())
-#     asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-#     effective_start_date = Column(DateTime, server_default=func.now())
-#     effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+#     asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+#     asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+#     effective_start_date = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+#     effective_end_date = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
 #     updated_by = Column(String(36), server_default=text("'45279d74-b359-49cd-bb94-d75e06ae64bc'"))
 
 #     # SQLAlchemy Relationships and Backreferences
@@ -684,7 +725,7 @@ class Dte_sender(Base):
     email_config_id = Column(String(36), ForeignKey('email_config.email_config_id'), nullable=False)
 
     # Table Metadata
-    date_added = Column(DateTime, server_default=func.now())
+    date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
 
     # SQLAlchemy Relationships and Backreferences
     email_config = relationship('Email_config', uselist=False, lazy=True)
@@ -714,8 +755,8 @@ class Dte(Base):
     dte_body = Column(Text, nullable=False)
 
     # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
     # SQLAlchemy Relationships and Backreferences
 
@@ -741,13 +782,15 @@ class Email_config(Base):
     email_server_id = Column(String(36), ForeignKey('email_server.email_server_id'))
 
     # Common Columns
+    from_full_name = Column(String(64), nullable=False)
+    reply_to_address = Column(String(64), nullable=False)
     is_sendgrid = Column(Boolean, nullable=False, server_default=false())
     sendgrid_sender_id = Column(String(36), nullable=True)
     is_email_forward = Column(Boolean, nullable=False, server_default=false())
 
     # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
@@ -781,7 +824,7 @@ class Email_server(Base):
     imap_ssl_port = Column(Integer, nullable=False)
 
     # Table Metadata
-    date_added = Column(DateTime, server_default=func.now())
+    date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
 
     # SQLAlchemy Relationships and Backreferences
 
@@ -813,8 +856,8 @@ class Ulinc_config(Base):
     send_message_webhook = Column(String(256), nullable=False)
 
     # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
@@ -842,8 +885,8 @@ class Credentials(Base):
     password = Column(String(128), nullable=True)
 
     # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
@@ -868,10 +911,10 @@ class Cookie(Base):
     cookie_json_value = Column(JSON, nullable=False)
 
     # Table Metadata
-    asOfStartTime = Column(DateTime, server_default=func.now())
-    asOfEndTime = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
-    effective_start_date = Column(DateTime, server_default=func.now())
-    effective_end_date = Column(DateTime, server_default=text("'9999-12-31 10:10:10'"))
+    asOfStartTime = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    asOfEndTime = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
+    effective_start_date = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+    effective_end_date = Column(DateTime, server_default=text("(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))"))
     updated_by = Column(String(36), ForeignKey('user.user_id'), nullable=False)
 
     # SQLAlchemy Relationships and Backreferences
@@ -897,19 +940,22 @@ class Cookie_type(Base):
     cookie_type_website_url = Column(String(512), nullable=True)
 
     # Table Metadata
-    date_added = Column(DateTime, server_default=func.now())
+    date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
 
     # SQLAlchemy Relationships and Backreferences
 
 class Time_zone(Base):
     __tablename__ = 'time_zone'
 
-    def __init__(self, time_zone_id, time_zone_name):
+    def __init__(self, time_zone_id, time_zone_name, time_zone_code):
         self.time_zone_id = time_zone_id
         self.time_zone_name = time_zone_name
+        self.time_zone_code = time_zone_code
     
     time_zone_id = Column(String(36), primary_key=True)
     time_zone_name = Column(String(64), nullable=False)
     time_zone_code = Column(String(16), nullable=False)
 
-    date_added = Column(DateTime, server_default=func.now())
+    date_added = Column(DateTime, server_default=text("(UTC_TIMESTAMP)"))
+
+    # account = relationship('Account', uselist=False, backref=backref('tz', uselist=False), lazy=True)

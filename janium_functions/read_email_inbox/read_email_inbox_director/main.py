@@ -1,17 +1,14 @@
 import base64
 import json
-import logging
-import os
-import sys
 from datetime import datetime
+import logging
+import sys
+import os
+import pytz
 
 import holidays
 from google.cloud import pubsub_v1
 from sqlalchemy import and_, or_
-
-# Instantiates a Pub/Sub client
-publisher = pubsub_v1.PublisherClient()
-PROJECT_ID = 'janium-foundation'
 
 if not os.getenv('LOCAL_DEV'):
     from model import *
@@ -35,9 +32,15 @@ else:
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 
+PROJECT_ID = os.getenv('PROJECT_ID')
+
+
 def main(event, context):
-    session = Session()
+    # Instantiates a Pub/Sub account
+    publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path(PROJECT_ID, 'janium-read-email-inbox-topic')
+
+    session = get_session()
 
     now = datetime.now()
     now_date = now.date()
@@ -46,33 +49,34 @@ def main(event, context):
     us_holidays.append(datetime(now.year, 12, 31)) # New Years Eve
     us_holidays.append(datetime(now.year, 1, 1)) # New Years Day
 
-    clients = session.query(Client).filter(Client.is_active == 1)\
-                                   .filter(Client.is_email_forward != 1)\
-                                   .filter(Client.email_config_id != Email_config.unassigned_email_config)\
-                                   .all()
+    accounts = session.query(Account).filter(and_(
+        and_(Account.effective_start_date < datetime.utcnow(), Account.effective_end_date > datetime.utcnow()),
+        Account.is_sending_emails
+    )).all()
 
     if now_date not in us_holidays:
-        clients_list = []
-        for client in clients:
+        accounts_list = []
+        for account in accounts:
+            print(account.account_id)
             message_json = json.dumps(
-                {"data": {"client_id": client.client_id}}
+                {"data": {"account_id": account.account_id}}
             )
             message_bytes = message_json.encode('utf-8')
 
-            ### Publish message to send-dte-function ###
-            try:
-                if not os.getenv('LOCAL_DEV'):
-                    publish_future = publisher.publish(topic_path, data=message_bytes)
-                    publish_future.result()
-                else:
-                    payload = {"client_id": client.client_id}
-                    payload = json.dumps(payload)
-                    payload = base64.b64encode(str(payload).encode("utf-8"))
-                    function.main({"data": payload}, 1)
-                clients_list.append({"client_id": client.client_id, "client_full_name": client.full_name})
-            except Exception as err:
-                logger.error(str(err))
-        logger.info('Messages to janium-read-email-inbox-topic published for clients {}'.format(clients_list))
+            # ### Publish message to send-dte-function ###
+            # try:
+            #     if not os.getenv('LOCAL_DEV'):
+            #         publish_future = publisher.publish(topic_path, data=message_bytes)
+            #         publish_future.result()
+            #     else:
+            #         payload = {"account_id": account.account_id}
+            #         payload = json.dumps(payload)
+            #         payload = base64.b64encode(str(payload).encode("utf-8"))
+            #         # function.main({"data": payload}, 1)
+            #     accounts_list.append({"account_id": account.account_id})
+            # except Exception as err:
+            #     logger.error(str(err))
+        logger.info('Messages to janium-read-email-inbox-topic published for accounts {}'.format(accounts_list))
 
 if __name__ == '__main__':
     payload = {

@@ -55,46 +55,70 @@ def get_inbox(username, password, imap_address, port):
             return_list.append(email.message_from_bytes(data[b'RFC822'], policy=policy.default))
     return return_list
 
-def get_email_sends_contacts(client):
+def get_email_send_contacts(janium_campaign):
     return [
-        contact for contact in client.contacts.order_by(Contact.full_name) if contact.actions.filter(Action.action_type_id.in_([4])).first()
+        contact for contact in janium_campaign.contacts.order_by(Contact.contact_id) if contact.actions.filter(Action.action_type_id.in_([4])).first()
     ]
 
 def main(event, context):
     pubsub_message = base64.b64decode(event['data']).decode('utf-8')
     payload_json = json.loads(pubsub_message)
+    
+    session = get_session()
 
-    session = Session()
-    client = session.query(Client).filter(Client.client_id == payload_json['client_id']).first()
+    if account := session.query(Account).filter(Account.account_id == payload_json['account_id']).first():
+        account_local_time = datetime.now(pytz.timezone('UTC')).astimezone(pytz.timezone(account.time_zone.time_zone_code)).replace(tzinfo=None)
+        for janium_campaign in account.janium_campaigns:
+            if janium_campaign.email_config.email_config_id != Email_config.unassigned_email_config_id and janium_campaign.email_config.is_email_forward == 0:
 
-    email_server = client.email_config.email_server
-    inbox = get_inbox(client.email_config.credentials.username, client.email_config.credentials.password, email_server.imap_address, email_server.imap_ssl_port)
+                email_server = janium_campaign.email_config.email_server
+                inbox = get_inbox(janium_campaign.email_config.credentials.username, janium_campaign.email_config.credentials.password, email_server.imap_address, email_server.imap_ssl_port)
+                contacts = get_email_send_contacts(janium_campaign)
 
-    contacts = get_email_sends_contacts(client)
-
-    contacts_list = []
-    for contact in contacts:
-        # logger.debug(contact.full_name)
-        for message in inbox:
-            from_addr = re.findall(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)", message['FROM'])[0]
-            body = message.get_body()
-            body = str(body.get_payload())
-            body = str(quopri.decodestring(body))
-            if from_addr in contact.get_emails():
-                existing_action = contact.actions.filter(Action.contact_id == contact.contact_id).filter(Action.action_type_id == 6).first()
-                if existing_action := contact.actions.filter(Action.contact_id == contact.contact_id).filter(Action.action_type_id == 6).first():
-                    logger.debug(str('Existing Action: ' + str(existing_action.action_type_id)))
-                else:
-                    new_action = Action(str(uuid4()), contact.contact_id, 6, mtn_time, body)
-                    session.add(new_action)
-                    session.commit()
-                    contacts_list.append({"contact_full_name": contact.full_name, "contact_email_address": from_addr, "contact_id": contact.contact_id})
-    if len(contacts_list) > 0:
-        logger.info("Client {} had new responses from these contacts: {}".format(client.full_name, contacts_list))
+                contact_list = []
+                for contact in contacts:
+                    for message in inbox:
+                        from_addr = re.findall(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)", message['FROM'])[0]
+                        body = message.get_body()
+                        body = str(body.get_payload())
+                        body = str(quopri.decodestring(body))
+                        if from_addr in contact.get_emails():
+                            if existing_action := contact.actions.filter(Action.contact_id == contact.contact_id).filter(Action.action_type_id == 6).first():
+                                if continue_campaign_action:= contact.actions.filter(Action.contact_id == contact.contact_id).filter(Action.action_type_id == 14).first():
+                                    if existing_action.action_timestamp < continue_campaign_action.action_timestamp:
+                                        new_action = Action(str(uuid4()), contact.contact_id, 6, mtn_time, body)
+                                        session.add(new_action)
+                                        session.commit()
+                                        contact_list.append(
+                                            {
+                                                "contact_first_name": contact.contact_info['ulinc']['first_name'],
+                                                "contact_email_address": from_addr,
+                                                "contact_id": contact.contact_id,
+                                                "janium_campaign": janium_campaign.janium_campaign_name
+                                            }
+                                        )
+                                    else:
+                                        pass
+                                else:
+                                    pass
+                            else:
+                                new_action = Action(str(uuid4()), contact.contact_id, 6, mtn_time, body)
+                                session.add(new_action)
+                                session.commit()
+                                contact_list.append(
+                                        {
+                                            "contact_first_name": contact.contact_info['ulinc']['first_name'],
+                                            "contact_email_address": from_addr,
+                                            "contact_id": contact.contact_id,
+                                            "janium_campaign": janium_campaign.janium_campaign_name
+                                        }
+                                    )
+    if len(contact_list) > 0:
+        logger.info("Account {} had new responses from these contacts: {}".format(account.account_id, contact_list))
 
 if __name__ == '__main__':
     payload = {
-        "client_id": "67e736f3-9f35-4bf0-992f-1e8a5afa261a"
+        "account_id": "ee4c4be2-14ac-43b2-9a2d-8cd49cd534f3"
     }
     payload = json.dumps(payload)
     payload = base64.b64encode(str(payload).encode("utf-8"))
