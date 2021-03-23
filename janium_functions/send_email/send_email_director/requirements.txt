@@ -2,3 +2,4 @@ sqlalchemy
 pymysql
 holidays==0.10.3
 google-cloud-pubsub
+pytz

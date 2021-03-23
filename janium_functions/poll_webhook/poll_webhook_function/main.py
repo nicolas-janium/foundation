@@ -3,10 +3,10 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
-from uuid import uuid4
-import pytz
 from pprint import pprint
+from uuid import uuid4
 
+import pytz
 import requests
 from nameparser import HumanName
 from urllib3.exceptions import InsecureRequestWarning
@@ -14,9 +14,9 @@ from urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning) # pylint: disable=no-member
 
 if not os.getenv('LOCAL_DEV'):
+    import demoji_module as demoji
     from model import *
     from model_types import *
-    import demoji_module as demoji
     demoji.download_codes()
 
     logger = logging.getLogger('poll_webhook')
@@ -27,9 +27,9 @@ if not os.getenv('LOCAL_DEV'):
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 else:
+    import janium_functions.poll_webhook.poll_webhook_function.demoji_module as demoji
     from db.model import *
     from db.model_types import *
-    import janium_functions.poll_webhook.poll_webhook_function.demoji_module as demoji
 
     logger = logging.getLogger('poll_webhook')
     logger.setLevel(logging.DEBUG)

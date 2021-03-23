@@ -1,18 +1,16 @@
 import base64
+import csv
 import io
 import json
 import logging
 import os
 from datetime import datetime, timedelta
-from uuid import uuid4
-import csv
 from pprint import pprint
-import pytz
+from uuid import uuid4
 
 import pandas as pd
+import pytz
 import requests
-from nameparser import HumanName
-from urllib3.exceptions import InsecureRequestWarning
 from workdays import networkdays
 
 if not os.getenv('LOCAL_DEV'):

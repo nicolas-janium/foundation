@@ -1,0 +1,6 @@
+pandas
+pytz
+requests
+sqlalchemy
+pymysql
+workdays

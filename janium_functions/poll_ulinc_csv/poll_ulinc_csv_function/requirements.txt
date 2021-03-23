@@ -3,3 +3,4 @@ nameparser
 sqlalchemy
 pymysql
 colorama
+pytz

@@ -1,11 +1,11 @@
 import base64
 import json
-from datetime import datetime
 import logging
-import sys
 import os
-import pytz
+import sys
+from datetime import datetime
 
+import pytz
 from google.cloud import pubsub_v1
 from sqlalchemy import and_, or_
 
@@ -21,7 +21,8 @@ if not os.getenv('LOCAL_DEV'):
     logger.addHandler(logHandler)
 else:
     from db.model import *
-    from janium_functions.poll_webhook.poll_webhook_function import main as function
+    from janium_functions.poll_webhook.poll_webhook_function import \
+        main as function
 
     logger = logging.getLogger('poll_webhook_director')
     logger.setLevel(logging.DEBUG)
