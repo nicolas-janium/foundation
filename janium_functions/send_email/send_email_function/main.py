@@ -344,15 +344,15 @@ def main(event, context):
                 ### Divide the email targets list to evenly distribute over the queue start and end time ###
                 xx = int((queue_times_dict['end'].hour - queue_times_dict['start'].hour) / 0.5)
 
-                # recipient_list = []
-                # for email_target in email_targets_list[0:xx]:
-                #     if email_target['is_sendgrid']:
-                #         send_email_res = send_email_with_sendgrid(email_target, session, account_local_time)
-                #     else:
-                #         send_email_res = send_email(email_target, session, account_local_time)
-                #     recipient_list.append({"contact_full_name": email_target['contact_full_name'], "contact_email_address": email_target['contact_email'], "contact_id": email_target['contact_id']})
-                # logger_message = 'Sent emails to {} for account {} in campaign {} with {}'.format(recipient_list, account.account_id, janium_campaign.janium_campaign_name, 'sendgrid' if is_sendgrid else 'email app')
-                # logger.info(logger_message)
+                recipient_list = []
+                for email_target in email_targets_list[0:xx]:
+                    if email_target['is_sendgrid']:
+                        send_email_res = send_email_with_sendgrid(email_target, session, account_local_time)
+                    else:
+                        send_email_res = send_email(email_target, session, account_local_time)
+                    recipient_list.append({"contact_full_name": email_target['contact_full_name'], "contact_email_address": email_target['contact_email'], "contact_id": email_target['contact_id']})
+                logger_message = 'Sent emails to {} for account {} in campaign {} with {}'.format(recipient_list, account.account_id, janium_campaign.janium_campaign_name, 'sendgrid' if is_sendgrid else 'email app')
+                logger.info(logger_message)
 
 if __name__ == '__main__':
     payload = {
