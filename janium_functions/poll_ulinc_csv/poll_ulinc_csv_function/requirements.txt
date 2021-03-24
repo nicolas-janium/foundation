@@ -4,3 +4,5 @@ sqlalchemy
 pymysql
 colorama
 pytz
+pandas
+urllib3
