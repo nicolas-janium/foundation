@@ -2,13 +2,13 @@ steps:
   - id: "deploy data-enrichment-function"
     name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
-    args: ['-c', 'gcloud functions deploy data-enrichment-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-topic=janium-data-enrichment-topic --source=./janium_functions/data_enrichment/data_enrichment_function --entry-point=main --egress-settings=private-ranges-only --vpc-connector=prod-vpc-connector --set-env-vars=PROJECT_ID=foundation-production,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=prod']
+    args: ['-c', 'gcloud functions deploy data-enrichment-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-topic=janium-data-enrichment-topic --source=./janium_functions/data_enrichment/data_enrichment_function --entry-point=main --egress-settings=private-ranges-only --vpc-connector=prod-vpc-connector --set-env-vars=PROJECT_ID=foundation-production,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=prod,SENDGRID_API_KEY=$$SENDGRID_API_KEY_SECRET,KENDO_API_KEY=$$KENDO_API_KEY_SECRET']
     secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
 
   - id: "deploy data-enrichment-director"
     name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
-    args: ['-c', 'gcloud functions deploy data-enrichment-director-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-topic=janium-data-enrichment-director-topic --source=./janium_functions/data_enrichment/data_enrichment_director --entry-point=main --egress-settings=private-ranges-only --vpc-connector=prod-vpc-connector --set-env-vars=PROJECT_ID=foundation-production,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=prod']
+    args: ['-c', 'gcloud functions deploy data-enrichment-director-function --runtime=python38 --timeout=180 --region=us-central1 --trigger-topic=janium-data-enrichment-director-topic --source=./janium_functions/data_enrichment/data_enrichment_director --entry-point=main --egress-settings=private-ranges-only --vpc-connector=prod-vpc-connector --set-env-vars=PROJECT_ID=foundation-production,DB_USER=gcf,DB_PASSWORD=$$DB_PASSWORD_SECRET,DB_PRIVATE_HOST=$$DB_PRIVATE_HOST_SECRET,DB_DATABASE=prod,SENDGRID_API_KEY=$$SENDGRID_API_KEY_SECRET,KENDO_API_KEY=$$KENDO_API_KEY_SECRET']
     secretEnv: ['DB_PASSWORD_SECRET', 'DB_PRIVATE_HOST_SECRET']
 
 availableSecrets:
@@ -17,3 +17,7 @@ availableSecrets:
     env: 'DB_PASSWORD_SECRET'
   - versionName: projects/foundation-production/secrets/prod_db_private_host/versions/latest
     env: 'DB_PRIVATE_HOST_SECRET'
+  - versionName: projects/foundation-staging-305217/secrets/sendgrid-api-key/versions/latest
+    env: 'SENDGRID_API_KEY_SECRET'
+  - versionName: projects/foundation-staging-305217/secrets/kendo-api-key/versions/latest
+    env: 'KENDO_API_KEY_SECRET'
