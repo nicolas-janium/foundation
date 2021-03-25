@@ -233,13 +233,32 @@ def handle_csv_data(account, janium_campaign, ulinc_campaign, session):
                         new_action = Action(str(uuid4()), existing_contact.contact_id, 1, datetime.utcnow(), None)
                         session.add(new_action)
                 else:
+                    new_contact = create_new_contact(
+                        item, account.account_id, janium_campaign.janium_campaign_id, ulinc_campaign.ulinc_campaign_id, contact_source_id, account.ulinc_config.ulinc_client_id
+                    )
+                    session.add(new_contact)
+                    new_action = Action(str(uuid4()), new_contact.contact_id, 1, datetime.utcnow(), None)
+                    session.add(new_action)
+            elif item['Status'] == 'Replied':
+                if existing_contact:
                     pass
-                    # new_contact = create_new_contact(
-                    #     item, account.account_id, janium_campaign.janium_campaign_id, ulinc_campaign.ulinc_campaign_id, contact_source_id, account.ulinc_config.ulinc_client_id
-                    # )
-                    # session.add(new_contact)
-                    # new_action = Action(str(uuid4()), new_contact.contact_id, 1, datetime.utcnow(), None)
-                    # session.add(new_action)
+                else:
+                    new_contact = create_new_contact(
+                        item, account.account_id, janium_campaign.janium_campaign_id, ulinc_campaign.ulinc_campaign_id, contact_source_id, account.ulinc_config.ulinc_client_id
+                    )
+                    session.add(new_contact)
+                    new_action = Action(str(uuid4()), new_contact.contact_id, 1, datetime.utcnow(), None)
+                    session.add(new_action)
+            elif item['Status'] == 'Talking':
+                if existing_contact:
+                    pass
+                else:
+                    new_contact = create_new_contact(
+                        item, account.account_id, janium_campaign.janium_campaign_id, ulinc_campaign.ulinc_campaign_id, contact_source_id, account.ulinc_config.ulinc_client_id
+                    )
+                    session.add(new_contact)
+                    new_action = Action(str(uuid4()), new_contact.contact_id, 1, datetime.utcnow(), None)
+                    session.add(new_action)
         session.commit()
 
 

@@ -32,8 +32,6 @@ else:
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 
-mtn_tz = pytz.timezone('US/Mountain')
-mtn_time = datetime.now(pytz.timezone('UTC')).astimezone(mtn_tz)
 
 def main(event, context):
     # Instantiates a Pub/Sub account
@@ -51,7 +49,7 @@ def main(event, context):
     us_holidays.append(datetime(now.year, 1, 1)) # New Years Day
 
     accounts = session.query(Account).filter(and_(
-        and_(Account.effective_start_date < mtn_time, Account.effective_end_date > mtn_time),
+        and_(Account.effective_start_date < datetime.utcnow(), Account.effective_end_date > datetime.utcnow()),
         Account.is_sending_li_messages,
         Account.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id
     )).all()

@@ -11,6 +11,7 @@ import urllib3
 from bs4 import BeautifulSoup as Soup
 from sqlalchemy import or_, and_
 from workdays import networkdays
+from html2text import html2text
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

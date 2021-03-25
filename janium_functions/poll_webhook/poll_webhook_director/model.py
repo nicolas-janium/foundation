@@ -363,8 +363,9 @@ class Janium_campaign(Base):
 
     # SQLAlchemy Relationships and Backreferences
     contacts = relationship('Contact', backref=backref('contact_janium_campaign', uselist=False), uselist=True, lazy='dynamic')
-    ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('parent_janium_campaign', uselist=False), uselist=True, lazy=True)
+    ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('parent_janium_campaign', uselist=False), uselist=True, lazy='dynamic')
     janium_campaign_steps = relationship('Janium_campaign_step', backref=backref('parent_janium_campaign', uselist=False), uselist=True, lazy='dynamic')
+    email_config = relationship('Email_config', backref=backref('email_config_janium_campaign', uselist=False), uselist=False, lazy=True)
 
     def get_effective_dates(self, timezone):
         start_date = pytz.utc.localize(self.effective_start_date).astimezone(pytz.timezone(timezone)).replace(tzinfo=None)
@@ -516,12 +517,24 @@ class Contact(Base):
     actions = relationship('Action', backref=backref('contact', uselist=False), uselist=True, lazy='dynamic')
     # info = relationship('Contact_info', uselist=True, lazy='dynamic')
 
+    def get_short_ulinc_id(self, ulinc_client_id):
+        return str(self.ulinc_id).replace(ulinc_client_id, '')
+
     def get_emails(self):
         contact_info = self.contact_info
 
         emails = []
         for key in contact_info:
-            emails.append(contact_info[key]['email'])
+            if key == 'ulinc':
+                emails.insert(1, contact_info[key]['email'])
+            elif key == 'kendo':
+                if work_email := contact_info[key]['work_email']:
+                    if work_email['is_valid']:
+                        emails.insert(0, work_email['value'])
+                    else:
+                        emails.append(work_email['value'])
+                if private_email := contact_info[key]['private_email']:
+                    emails.append(private_email['value'])
         return emails
 
 # class Contact_info(Base):

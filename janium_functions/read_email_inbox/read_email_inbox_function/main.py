@@ -35,7 +35,6 @@ else:
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 
-mtn_time = datetime.utcnow() - timedelta(hours=7)
 
 def get_inbox(username, password, imap_address, port):
     ssl_context = ssl.create_default_context()

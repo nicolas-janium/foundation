@@ -12,7 +12,7 @@ from sqlalchemy import and_, or_
 if not os.getenv('LOCAL_DEV'):
     from model import *
 
-    logger = logging.getLogger('poll_ulinc_csv_director')
+    logger = logging.getLogger('read_ulinc_inbox_director')
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(levelname)s - %(message)s')
     logHandler = logging.StreamHandler()
@@ -21,9 +21,9 @@ if not os.getenv('LOCAL_DEV'):
     logger.addHandler(logHandler)
 else:
     from db.model import *
-    from janium_functions.poll_ulinc_csv.poll_ulinc_csv_function import main as function
+    from janium_functions.read_ulinc_inbox.read_ulinc_inbox_function import main as function
 
-    logger = logging.getLogger('poll_ulinc_csv_director')
+    logger = logging.getLogger('read_ulinc_inbox_director')
     logger.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(levelname)s - %(message)s')
     logHandler = logging.StreamHandler()
@@ -36,13 +36,12 @@ def main(event, context):
     # Instantiates a Pub/Sub client
     publisher = pubsub_v1.PublisherClient()
     PROJECT_ID = os.getenv('PROJECT_ID')
-    topic_path = publisher.topic_path(PROJECT_ID, 'janium-poll-ulinc-csv-topic')
+    topic_path = publisher.topic_path(PROJECT_ID, 'janium-read-ulinc-inbox-topic')
 
     session = get_session()
 
     accounts = session.query(Account).filter(and_(
         and_(Account.effective_start_date < datetime.utcnow(), Account.effective_end_date > datetime.utcnow()),
-        and_(Account.data_enrichment_start_date < datetime.utcnow(), Account.data_enrichment_end_date > datetime.utcnow()),
         Account.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id
     )).all()
 
@@ -68,7 +67,7 @@ def main(event, context):
             # return 'OKKKK'
         except Exception as err:
             logger.error(str(err))
-    logger.info('Messages to janium-poll-ulinc-csv-topic published for accounts {}'.format(accounts_list))
+    logger.info('Messages to janium-read-ulinc-inbox-topic published for accounts {}'.format(accounts_list))
 
 if __name__ == '__main__':
     payload = {
