@@ -1,0 +1,6 @@
+requests
+sqlalchemy
+pymysql
+google-cloud-secret-manager
+google-cloud-pubsub
+google-auth
