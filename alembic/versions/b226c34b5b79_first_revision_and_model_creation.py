@@ -1,8 +1,8 @@
 """first revision and model creation
 
-Revision ID: e7423b0b53b7
+Revision ID: b226c34b5b79
 Revises: 
-Create Date: 2021-03-19 11:13:39.601283
+Create Date: 2021-03-29 14:39:56.003314
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'e7423b0b53b7'
+revision = 'b226c34b5b79'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -174,22 +174,6 @@ def upgrade():
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('permission_hierarchy_id')
     )
-    op.create_table('ulinc_config',
-    sa.Column('ulinc_config_id', sa.String(length=36), nullable=False),
-    sa.Column('credentials_id', sa.String(length=36), nullable=True),
-    sa.Column('cookie_id', sa.String(length=36), nullable=True),
-    sa.Column('ulinc_client_id', sa.String(length=16), nullable=False),
-    sa.Column('new_connection_webhook', sa.String(length=256), nullable=False),
-    sa.Column('new_message_webhook', sa.String(length=256), nullable=False),
-    sa.Column('send_message_webhook', sa.String(length=256), nullable=False),
-    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
-    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
-    sa.Column('updated_by', sa.String(length=36), nullable=False),
-    sa.ForeignKeyConstraint(['cookie_id'], ['cookie.cookie_id'], ),
-    sa.ForeignKeyConstraint(['credentials_id'], ['credentials.credentials_id'], ),
-    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
-    sa.PrimaryKeyConstraint('ulinc_config_id')
-    )
     op.create_table('user_permission_map',
     sa.Column('user_id', sa.String(length=36), nullable=False),
     sa.Column('permission_id', sa.String(length=36), nullable=False),
@@ -232,7 +216,6 @@ def upgrade():
     sa.Column('account_id', sa.String(length=36), nullable=False),
     sa.Column('account_type_id', sa.Integer(), nullable=False),
     sa.Column('account_group_id', sa.String(length=36), nullable=False),
-    sa.Column('ulinc_config_id', sa.String(length=36), nullable=False),
     sa.Column('email_config_id', sa.String(length=36), nullable=False),
     sa.Column('time_zone_id', sa.String(length=36), nullable=False),
     sa.Column('is_sending_emails', sa.Boolean(), server_default=sa.text('false'), nullable=False),
@@ -249,7 +232,6 @@ def upgrade():
     sa.ForeignKeyConstraint(['account_type_id'], ['account_type.account_type_id'], ),
     sa.ForeignKeyConstraint(['email_config_id'], ['email_config.email_config_id'], ),
     sa.ForeignKeyConstraint(['time_zone_id'], ['time_zone.time_zone_id'], ),
-    sa.ForeignKeyConstraint(['ulinc_config_id'], ['ulinc_config.ulinc_config_id'], ),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('account_id')
     )
@@ -281,6 +263,7 @@ def upgrade():
     sa.Column('janium_campaign_name', sa.String(length=512), nullable=False),
     sa.Column('janium_campaign_description', sa.String(length=512), nullable=True),
     sa.Column('is_messenger', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('is_reply_in_email_thread', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('queue_start_time', sa.DateTime(), nullable=False),
     sa.Column('queue_end_time', sa.DateTime(), nullable=False),
     sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
@@ -292,6 +275,25 @@ def upgrade():
     sa.ForeignKeyConstraint(['email_config_id'], ['email_config.email_config_id'], ),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('janium_campaign_id')
+    )
+    op.create_table('ulinc_config',
+    sa.Column('ulinc_config_id', sa.String(length=36), nullable=False),
+    sa.Column('credentials_id', sa.String(length=36), nullable=False),
+    sa.Column('cookie_id', sa.String(length=36), nullable=False),
+    sa.Column('account_id', sa.String(length=36), nullable=False),
+    sa.Column('ulinc_client_id', sa.String(length=16), nullable=False),
+    sa.Column('ulinc_li_email', sa.String(length=64), nullable=False),
+    sa.Column('new_connection_webhook', sa.String(length=256), nullable=False),
+    sa.Column('new_message_webhook', sa.String(length=256), nullable=False),
+    sa.Column('send_message_webhook', sa.String(length=256), nullable=False),
+    sa.Column('asOfStartTime', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
+    sa.Column('asOfEndTime', sa.DateTime(), server_default=sa.text('(DATE_ADD(UTC_TIMESTAMP, INTERVAL 5000 YEAR))'), nullable=True),
+    sa.Column('updated_by', sa.String(length=36), nullable=False),
+    sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
+    sa.ForeignKeyConstraint(['cookie_id'], ['cookie.cookie_id'], ),
+    sa.ForeignKeyConstraint(['credentials_id'], ['credentials.credentials_id'], ),
+    sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
+    sa.PrimaryKeyConstraint('ulinc_config_id')
     )
     op.create_table('user_account_map',
     sa.Column('user_id', sa.String(length=36), nullable=False),
@@ -378,6 +380,7 @@ def upgrade():
     sa.Column('action_type_id', sa.Integer(), nullable=False),
     sa.Column('action_timestamp', sa.DateTime(), nullable=True),
     sa.Column('action_message', sa.Text(), nullable=True),
+    sa.Column('to_email_addr', sa.String(length=64), nullable=True),
     sa.Column('date_added', sa.DateTime(), server_default=sa.text('(UTC_TIMESTAMP)'), nullable=True),
     sa.ForeignKeyConstraint(['action_type_id'], ['action_type.action_type_id'], ),
     sa.ForeignKeyConstraint(['contact_id'], ['contact.contact_id'], ),
@@ -394,6 +397,7 @@ def downgrade():
     op.drop_table('janium_campaign_step')
     op.drop_table('user_proxy_map')
     op.drop_table('user_account_map')
+    op.drop_table('ulinc_config')
     op.drop_table('janium_campaign')
     op.drop_table('contact_source')
     op.drop_table('user_account_group_map')
@@ -401,7 +405,6 @@ def downgrade():
     op.drop_table('account_group')
     op.drop_table('dte_sender')
     op.drop_table('user_permission_map')
-    op.drop_table('ulinc_config')
     op.drop_table('permission_hierarchy')
     op.drop_table('email_config')
     op.drop_table('permission')

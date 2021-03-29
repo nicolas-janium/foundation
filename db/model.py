@@ -57,13 +57,12 @@ class Account(Base):
     __tablename__ = 'account'
     unassigned_account_id = '8acafb6b-3ce5-45b5-af81-d357509ba457'
 
-    def __init__(self, account_id, account_group_id, ulinc_config_id, email_config_id,
+    def __init__(self, account_id, account_group_id, email_config_id,
                        is_sending_emails, is_sending_li_messages, is_receiving_dte,
                        effective_start_date, effective_end_date, data_enrichment_start_date,
                        data_enrichment_end_date):
         self.account_id = account_id,
         self.account_group_id = account_group_id
-        self.ulinc_config_id = ulinc_config_id
         self.email_config_id = email_config_id
         self.is_sending_emails = is_sending_emails
         self.is_sending_li_messages = is_sending_li_messages
@@ -77,7 +76,7 @@ class Account(Base):
 
     account_type_id = Column(Integer, ForeignKey('account_type.account_type_id'), nullable=False)
     account_group_id = Column(String(36), ForeignKey('account_group.account_group_id'), nullable=False)
-    ulinc_config_id = Column(String(36), ForeignKey('ulinc_config.ulinc_config_id'), nullable=False)
+    # ulinc_config_id = Column(String(36), ForeignKey('ulinc_config.ulinc_config_id'), nullable=False)
     email_config_id = Column(String(36), ForeignKey('email_config.email_config_id'), nullable=False)
     time_zone_id = Column(String(36), ForeignKey('time_zone.time_zone_id'), nullable=False)
 
@@ -100,7 +99,7 @@ class Account(Base):
     ulinc_campaigns = relationship('Ulinc_campaign', backref=backref('ulinc_campaign_account', uselist=False), uselist=True, lazy='dynamic')
     contacts = relationship('Contact', backref=backref('contact_account', uselist=False), uselist=True, lazy='dynamic')
     email_config = relationship('Email_config', backref=backref('email_config_account', uselist=False), uselist=False, lazy=True)
-    ulinc_config = relationship('Ulinc_config', uselist=False, lazy=True)
+    ulinc_configs = relationship('Ulinc_config', backref=backref('ulinc_config_account', uselist=False), uselist=True, lazy=True)
     time_zone = relationship('Time_zone', backref=backref('tz_account', uselist=True), uselist=False, lazy=True)
 
 class Account_type(Base):
@@ -330,14 +329,14 @@ class Janium_campaign(Base):
     __tablename__ = 'janium_campaign'
     unassigned_janium_campaign_id = '65c96bb2-0c32-4858-a913-ca0cd902f1fe'
 
-    def __init__(self, janium_campaign_id, account_id, email_config_id, janium_campaign_name, janium_campaign_description, is_messenger):
+    def __init__(self, janium_campaign_id, account_id, email_config_id, janium_campaign_name, janium_campaign_description, is_messenger, is_reply_in_email_thread):
         self.janium_campaign_id = janium_campaign_id
         self.account_id = account_id
         self.email_config_id = email_config_id
         self.janium_campaign_name = janium_campaign_name
         self.janium_campaign_description = janium_campaign_description
-        # self.is_active = is_active
         self.is_messenger = is_messenger
+        self.is_reply_in_email_thread = is_reply_in_email_thread
 
     # Primary Keys
     janium_campaign_id = Column(String(36), primary_key=True, nullable=False)
@@ -349,8 +348,8 @@ class Janium_campaign(Base):
     # Common Columns
     janium_campaign_name = Column(String(512), nullable=False)
     janium_campaign_description = Column(String(512), nullable=True)
-    # is_active = Column(Boolean, nullable=False, server_default=false())
     is_messenger = Column(Boolean, nullable=False, server_default=false())
+    is_reply_in_email_thread = Column(Boolean, nullable=False, server_default=false())
     queue_start_time = Column(DateTime, nullable=False)
     queue_end_time = Column(DateTime, nullable=False)
 
@@ -846,7 +845,7 @@ class Ulinc_config(Base):
     __tablename__ = 'ulinc_config'
     unassigned_ulinc_config_id = 'dff0e400-b338-4bc5-bb99-617bade305bd'
 
-    def __init__(self, ulinc_config_id, credentials_id, cookie_id, ulinc_client_id, new_connection_webhook, new_message_webhook, send_message_webhook):
+    def __init__(self, ulinc_config_id, credentials_id, cookie_id, ulinc_client_id, new_connection_webhook, new_message_webhook, send_message_webhook, ulinc_li_email):
         self.ulinc_config_id = ulinc_config_id
         self.credentials_id = credentials_id
         self.cookie_id = cookie_id
@@ -854,16 +853,19 @@ class Ulinc_config(Base):
         self.new_connection_webhook = new_connection_webhook
         self.new_message_webhook = new_message_webhook
         self.send_message_webhook = send_message_webhook
+        self.ulinc_li_email = ulinc_li_email
 
     # Primary Keys
     ulinc_config_id = Column(String(36), primary_key=True)
 
     # Foreign Keys
-    credentials_id = Column(String(36), ForeignKey('credentials.credentials_id'))
-    cookie_id = Column(String(36), ForeignKey('cookie.cookie_id'))
+    credentials_id = Column(String(36), ForeignKey('credentials.credentials_id'), nullable=False)
+    cookie_id = Column(String(36), ForeignKey('cookie.cookie_id'), nullable=False)
+    account_id = Column(String(36), ForeignKey('account.account_id'), nullable=False)
 
     # Common Columns
     ulinc_client_id = Column(String(16), nullable=False)
+    ulinc_li_email = Column(String(64), nullable=False)
     new_connection_webhook = Column(String(256), nullable=False)
     new_message_webhook = Column(String(256), nullable=False)
     send_message_webhook = Column(String(256), nullable=False)

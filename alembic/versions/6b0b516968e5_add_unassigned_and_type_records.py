@@ -1,8 +1,8 @@
 """add unassigned and type records
 
-Revision ID: 2cdb0091b73f
-Revises: e7423b0b53b7
-Create Date: 2021-03-19 11:13:56.058214
+Revision ID: 6b0b516968e5
+Revises: b226c34b5b79
+Create Date: 2021-03-29 14:40:24.621174
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '2cdb0091b73f'
-down_revision = 'e7423b0b53b7'
+revision = '6b0b516968e5'
+down_revision = 'b226c34b5b79'
 branch_labels = None
 depends_on = None
 
@@ -104,7 +104,9 @@ ulinc_config = table('ulinc_config',
     column('new_connection_webhook', String),
     column('new_message_webhook', String),
     column('send_message_webhook', String),
-    column('updated_by', String)
+    column('updated_by', String),
+    column('account_id', String),
+    column('ulinc_li_email', String)
 )
 email_config = table('email_config',
     column('email_config_id', String),
@@ -147,7 +149,8 @@ janium_campaign = table('janium_campaign',
     column('is_messenger', Boolean),
     column('queue_start_time', DateTime),
     column('queue_end_time', DateTime),
-    column('updated_by', String)
+    column('updated_by', String),
+    column('is_reply_in_email_thread', Boolean)
 )
 ulinc_campaign = table('ulinc_campaign',
     column('ulinc_campaign_id', String),
@@ -174,7 +177,6 @@ account = table('account',
     column('account_id', String),
     column('account_type_id', Integer),
     column('account_group_id', String),
-    column('ulinc_config_id', String),
     column('email_config_id', String),
     column('time_zone_id', String),
     column('is_sending_emails', Boolean),
@@ -237,7 +239,8 @@ def upgrade():
             {'action_type_id': 18, 'action_type_name': 'ulinc_in_queue', 'action_type_description': 'The contact is in ulincs queue. Pre connection request. Ulinc side'},
             {'action_type_id': 19, 'action_type_name': 'ulinc_connection_requested', 'action_type_description': 'The contact has been sent a connection request. Ulinc side'},
             {'action_type_id': 20, 'action_type_name': 'ulinc_connection_error', 'action_type_description': 'The contact''s connection request had an error. Ulinc side'},
-            {'action_type_id': 21, 'action_type_name': 'ulinc_marked_to_later', 'action_type_description': 'Contact marked to later in Ulinc'}
+            {'action_type_id': 21, 'action_type_name': 'ulinc_marked_to_later', 'action_type_description': 'Contact marked to later in Ulinc'},
+            {'action_type_id': 22, 'action_type_name': 'kendo_data_enrichment', 'action_type_description': 'Data enrichment from Kendo Email'}
         ]
     )
     op.bulk_insert(cookie_type,
@@ -266,18 +269,6 @@ def upgrade():
             cookie_type_id=1,
             # cookie_json_value=json.dumps({'usr': '123', 'pwd': '123'})
             cookie_json_value = '{"usr": "123", "pwd": "123"}',
-            updated_by=model.User.system_user_id
-        )
-    )
-    op.execute(
-        ulinc_config.insert().values(
-            ulinc_config_id=model.Ulinc_config.unassigned_ulinc_config_id,
-            credentials_id=model.Credentials.unassigned_credentials_id,
-            cookie_id=model.Cookie.unassigned_cookie_id,
-            ulinc_client_id='999',
-            new_connection_webhook='123',
-            new_message_webhook='123',
-            send_message_webhook='123',
             updated_by=model.User.system_user_id
         )
     )
@@ -335,13 +326,26 @@ def upgrade():
             account_id=model.Account.unassigned_account_id,
             account_type_id=1,
             account_group_id=model.Account_group.unassigned_account_group_id,
-            ulinc_config_id=model.Ulinc_config.unassigned_ulinc_config_id,
             email_config_id=model.Email_config.unassigned_email_config_id,
             time_zone_id=mt_time_zone_id,
             is_sending_emails=False,
             is_sending_li_messages=False,
             is_receiving_dte=False,
             updated_by=model.User.system_user_id 
+        )
+    )
+    op.execute(
+        ulinc_config.insert().values(
+            ulinc_config_id=model.Ulinc_config.unassigned_ulinc_config_id,
+            credentials_id=model.Credentials.unassigned_credentials_id,
+            cookie_id=model.Cookie.unassigned_cookie_id,
+            ulinc_client_id='999',
+            new_connection_webhook='123',
+            new_message_webhook='123',
+            send_message_webhook='123',
+            updated_by=model.User.system_user_id,
+            account_id=model.Account.unassigned_account_id,
+            ulinc_li_email='unassigned@email.com'
         )
     )
     op.execute(
@@ -354,7 +358,8 @@ def upgrade():
             is_messenger=False,
             queue_start_time=text("'9999-12-31 09:00:00'"),
             queue_end_time=text("'9999-12-31 12:00:00'"),
-            updated_by=model.User.system_user_id
+            updated_by=model.User.system_user_id,
+            is_reply_in_email_thread=False
         )
     )
     op.execute(
