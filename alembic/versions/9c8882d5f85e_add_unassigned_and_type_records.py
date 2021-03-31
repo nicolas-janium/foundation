@@ -1,8 +1,8 @@
 """add unassigned and type records
 
-Revision ID: 6b0b516968e5
-Revises: b226c34b5b79
-Create Date: 2021-03-29 14:40:24.621174
+Revision ID: 9c8882d5f85e
+Revises: 6d4395d4b0b0
+Create Date: 2021-03-30 12:05:30.042323
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '6b0b516968e5'
-down_revision = 'b226c34b5b79'
+revision = '9c8882d5f85e'
+down_revision = '6d4395d4b0b0'
 branch_labels = None
 depends_on = None
 
@@ -106,7 +106,8 @@ ulinc_config = table('ulinc_config',
     column('send_message_webhook', String),
     column('updated_by', String),
     column('account_id', String),
-    column('ulinc_li_email', String)
+    column('ulinc_li_email', String),
+    column('ulinc_is_active', String)
 )
 email_config = table('email_config',
     column('email_config_id', String),
@@ -155,6 +156,7 @@ janium_campaign = table('janium_campaign',
 ulinc_campaign = table('ulinc_campaign',
     column('ulinc_campaign_id', String),
     column('account_id', String),
+    column('ulinc_config_id', String),
     column('janium_campaign_id', String),
     column('ulinc_campaign_name', String),
     column('ulinc_ulinc_campaign_id', String),
@@ -345,7 +347,8 @@ def upgrade():
             send_message_webhook='123',
             updated_by=model.User.system_user_id,
             account_id=model.Account.unassigned_account_id,
-            ulinc_li_email='unassigned@email.com'
+            ulinc_li_email='unassigned@email.com',
+            ulinc_is_active=False
         )
     )
     op.execute(
@@ -367,6 +370,7 @@ def upgrade():
             ulinc_campaign_id=model.Ulinc_campaign.unassigned_ulinc_campaign_id,
             janium_campaign_id=model.Janium_campaign.unassigned_janium_campaign_id,
             account_id=model.Account.unassigned_account_id,
+            ulinc_config_id=model.Ulinc_config.unassigned_ulinc_config_id,
             ulinc_campaign_name='Unassigned Janium Campaign',
             ulinc_ulinc_campaign_id='999',
             ulinc_is_active=False,
@@ -378,3 +382,4 @@ def upgrade():
 
 def downgrade():
     pass
+

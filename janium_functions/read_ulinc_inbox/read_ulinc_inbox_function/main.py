@@ -35,12 +35,12 @@ else:
     logHandler.setFormatter(formatter)
     logger.addHandler(logHandler)
 
-def get_ulinc_inbox(account, ulinc_campaign, contact):
+def get_ulinc_inbox(account, ulinc_config, ulinc_campaign, contact):
     req_session = requests.Session()
-    ulinc_client_id = account.ulinc_config.ulinc_client_id
+    ulinc_client_id = ulinc_config.ulinc_client_id
     url = "https://ulinc.co/{}/campaigns/{}/?act=contact_info&id={}".format(ulinc_client_id, ulinc_campaign.ulinc_ulinc_campaign_id, contact.get_short_ulinc_id(ulinc_client_id))
 
-    ulinc_cookie = account.ulinc_config.cookie.cookie_json_value
+    ulinc_cookie = ulinc_config.cookie.cookie_json_value
     jar = requests.cookies.RequestsCookieJar()
     jar.set('usr', ulinc_cookie['usr'])
     jar.set('pwd', ulinc_cookie['pwd'])
@@ -49,11 +49,11 @@ def get_ulinc_inbox(account, ulinc_campaign, contact):
     if res.ok:
         res2 = req_session.get(url="https://ulinc.co/{}/campaigns/{}/?act=mark_conv&ids={}&id=1".format(ulinc_client_id, ulinc_campaign.ulinc_ulinc_campaign_id, contact.get_short_ulinc_id(ulinc_client_id)), cookies=jar)
         if res2.ok:
-            print("Set contact back to unread")
+            # print("Set contact back to unread")
             return res.text
 
-def handle_ulinc_inbox(account, janium_campaign, ulinc_campaign, contact, session):
-    inbox_html = get_ulinc_inbox(account, ulinc_campaign, contact)
+def handle_ulinc_inbox(account, ulinc_config, janium_campaign, ulinc_campaign, contact, session):
+    inbox_html = get_ulinc_inbox(account, ulinc_config, ulinc_campaign, contact)
     inbox_soup = Soup(inbox_html, 'html.parser')
     for message in inbox_soup.find_all('div', **{"class": "direct-chat-msg"}):
         message_content = message.find('div', **{"class": "direct-chat-text"})
@@ -80,16 +80,24 @@ def main(event, context):
 
     if account := session.query(Account).filter(Account.account_id == payload_json['account_id']).first():
         account_local_time = datetime.now(pytz.timezone('UTC')).astimezone(pytz.timezone(account.time_zone.time_zone_code)).replace(tzinfo=None)
-        for janium_campaign in account.janium_campaigns:
-            effective_dates_dict = janium_campaign.get_effective_dates(account.time_zone.time_zone_code)
-            if (effective_dates_dict['start'] <= account_local_time <= effective_dates_dict['end']):
-                for ulinc_campaign in janium_campaign.ulinc_campaigns.filter(Ulinc_campaign.ulinc_is_active == 1).all():
-                    for contact in ulinc_campaign.contacts:
-                        handle_ulinc_inbox(account, janium_campaign, ulinc_campaign, contact, session)
+        for ulinc_config in account.ulinc_configs:
+            for ulinc_campaign in ulinc_config.ulinc_campaigns:
+                parent_janium_campaign = ulinc_campaign.parent_janium_campaign
+                effective_dates_dict = parent_janium_campaign.get_effective_dates(account.time_zone.time_zone_code)
+                if (effective_dates_dict['start'] <= account_local_time <= effective_dates_dict['end']):
+                    j = 1
+                    for i, contact in enumerate(ulinc_campaign.contacts):
+                        last_action = contact.actions.order_by(Action.action_timestamp.desc()).first()
+                        if last_action.action_type_id in [16,17,18,19, 20]:
+                            continue
+                        else:
+                            handle_ulinc_inbox(account, ulinc_config, parent_janium_campaign, ulinc_campaign, contact, session)
+                            print(j)
+                            j += 1
 
 if __name__ == '__main__':
     payload = {
-    "account_id": "ee4c4be2-14ac-43b2-9a2d-8cd49cd534f3"
+    "account_id": "7040c021-9986-4b52-a655-d167bc0a4f22"
 
     }
     payload = json.dumps(payload)

@@ -253,7 +253,8 @@ def get_email_targets(account, janium_campaign, is_sendgrid, account_local_time)
                 add_contact = False
                 if step.janium_campaign_step_type_id == 2:
                     if i + 1 < len(steps):
-                        if step.janium_campaign_step_delay <= day_diff < steps[i + 1].janium_campaign_step_delay:
+                        if step.janium_campaign_step_delay <= day_diff:
+                        # if step.janium_campaign_step_delay <= day_diff < steps[i + 1].janium_campaign_step_delay:
                             if num_sent_emails < i + 1:
                                 add_contact = True
                                 body = step.janium_campaign_step_body
@@ -264,7 +265,8 @@ def get_email_targets(account, janium_campaign, is_sendgrid, account_local_time)
                         else: 
                             continue
                     else:
-                        if step.janium_campaign_step_delay <= day_diff <= step.janium_campaign_step_delay + 1:
+                        # if step.janium_campaign_step_delay <= day_diff <= step.janium_campaign_step_delay + 1:
+                        if step.janium_campaign_step_delay <= day_diff:
                             if num_sent_emails < i + 1:
                                 add_contact = True
                                 body = step.janium_campaign_step_body
@@ -291,7 +293,8 @@ def get_email_targets(account, janium_campaign, is_sendgrid, account_local_time)
                     for i, step in enumerate(steps):
                         add_contact = False
                         if i + 1 < len(steps):
-                            if step.janium_campaign_step_delay <= day_diff < steps[i + 1].janium_campaign_step_delay:
+                            # if step.janium_campaign_step_delay <= day_diff < steps[i + 1].janium_campaign_step_delay:
+                            if step.janium_campaign_step_delay <= day_diff:
                                 # print(i + 1)
                                 if num_sent_emails < i + 1:
                                     print(i + 1)
@@ -300,7 +303,8 @@ def get_email_targets(account, janium_campaign, is_sendgrid, account_local_time)
                                     subject = step.janium_campaign_step_subject
                                     break
                         else:
-                            if step.janium_campaign_step_delay <= day_diff < step.janium_campaign_step_delay + 2:
+                            # if step.janium_campaign_step_delay <= day_diff < step.janium_campaign_step_delay + 2:
+                            if step.janium_campaign_step_delay <= day_diff:
                                 if num_sent_emails < i + 1:
                                     add_contact = True
                                     body = step.janium_campaign_step_body
@@ -341,7 +345,7 @@ def main(event, context):
                 email_targets_list = get_email_targets(account, janium_campaign, is_sendgrid, account_local_time)
                 pprint(email_targets_list)
 
-                ### Divide the email targets list to evenly distribute over the queue start and end time ###
+                ## Divide the email targets list to evenly distribute over the queue start and end time ###
                 xx = int((queue_times_dict['end'].hour - queue_times_dict['start'].hour) / 0.5)
 
                 recipient_list = []
@@ -356,7 +360,7 @@ def main(event, context):
 
 if __name__ == '__main__':
     payload = {
-        "account_id": "ee4c4be2-14ac-43b2-9a2d-8cd49cd534f3"
+        "account_id": "7040c021-9986-4b52-a655-d167bc0a4f22"
     }
     payload = json.dumps(payload)
     payload = base64.b64encode(str(payload).encode("utf-8"))

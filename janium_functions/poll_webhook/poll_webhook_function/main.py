@@ -116,7 +116,7 @@ def handle_webhook_response(account, contact_source_id, session):
                     existing_contact_info['ulinc']['website'] = new_contact_info['website']
                     existing_contact_info['ulinc']['li_profile_url'] = new_contact_info['profile']
                     existing_contact.contact_info = existing_contact_info
-                    connection_action = Action(str(uuid4()), existing_contact.contact_id, action_type_dict['li_new_connection']['id'], None, None)
+                    connection_action = Action(str(uuid4()), existing_contact.contact_id, action_type_dict['li_new_connection']['id'], datetime.utcnow(), None, None)
                     session.add(connection_action)
             else:
                 if existing_ulinc_campaign:
@@ -130,7 +130,7 @@ def handle_webhook_response(account, contact_source_id, session):
                     janium_campaign_id = Janium_campaign.unassigned_janium_campaign_id # Unassigned janium campaign id value
                 
                 new_contact = create_new_contact(item, account.account_id, janium_campaign_id, existing_ulinc_campaign_id, contact_source_id)
-                connection_action = Action(str(uuid4()), new_contact.contact_id, action_type_dict['li_new_connection']['id'], mtn_time, None)
+                connection_action = Action(str(uuid4()), new_contact.contact_id, action_type_dict['li_new_connection']['id'], datetime.utcnow(), None, None)
                 session.add(new_contact)
                 session.add(connection_action)
         elif webhook_response.contact_source_type_id == 2:
@@ -154,8 +154,9 @@ def handle_webhook_response(account, contact_source_id, session):
                 str(uuid4()),
                 contact_id,
                 action_type_dict['li_new_message']['id'],
-                mtn_time,
-                item['message']
+                datetime.utcnow(),
+                item['message'],
+                None
             )
             session.add(new_message_action)
         elif webhook_response.contact_source_type_id == 3:
@@ -192,16 +193,18 @@ def handle_webhook_response(account, contact_source_id, session):
                     str(uuid4()),
                     contact_id,
                     action_type_dict['ulinc_messenger_origin_message']['id'],
-                    mtn_time,
-                    item['message']
+                    datetime.utcnow(),
+                    item['message'],
+                    None
                 )
             else:
                 new_action = Action(
                     str(uuid4()),
                     contact_id,
                     action_type_dict['li_send_message']['id'],
-                    mtn_time,
-                    item['message']
+                    datetime.utcnow(),
+                    item['message'],
+                    None
                 )
             session.add(new_action)
         else:
@@ -217,32 +220,32 @@ def main(event, context):
 
     # client = session.query(Client).filter(Client.client_id == payload_json['client_id']).first()
     account = session.query(Account).filter(Account.account_id == payload_json['account_id']).first()
+    if account := session.query(Account).filter(Account.account_id == payload_json['account_id']).first():
+        for ulinc_config in account.ulinc_configs:
+            webhooks = [
+                {"url": ulinc_config.new_connection_webhook, "type": 1},
+                {"url": ulinc_config.new_message_webhook, "type": 2},
+                {"url": ulinc_config.send_message_webhook, "type": 3}
+            ]
 
-    if account:
-        webhooks = [
-            {"url": account.ulinc_config.new_connection_webhook, "type": 1},
-            {"url": account.ulinc_config.new_message_webhook, "type": 2},
-            {"url": account.ulinc_config.send_message_webhook, "type": 3}
-        ]
+            contact_source_id_list = []
+            empty_webhook_responses = []
+            for webhook in webhooks:
+                webhook_request_response = poll_webhook(webhook['url'], webhook['type'])
+                if len(webhook_request_response) > 0:
+                    contact_source = Contact_source(str(uuid4()), account.account_id, webhook['type'], webhook_request_response)
+                    # webhook_response = Webhook_response(str(uuid4()), account.account_id, webhook_request_response, webhook_response_type_dict[webhook['type']]['id'])
+                    session.add(contact_source)
+                    contact_source_id_list.append(contact_source.contact_source_id)
+                else:
+                    empty_webhook_responses.append(webhook['type'])
+            session.commit()
+            logger.info('Empty Webhooks for account {}: {}'.format(account.account_id, empty_webhook_responses))
 
-        contact_source_id_list = []
-        empty_webhook_responses = []
-        for webhook in webhooks:
-            webhook_request_response = poll_webhook(webhook['url'], webhook['type'])
-            if len(webhook_request_response) > 0:
-                contact_source = Contact_source(str(uuid4()), account.account_id, webhook['type'], webhook_request_response)
-                # webhook_response = Webhook_response(str(uuid4()), account.account_id, webhook_request_response, webhook_response_type_dict[webhook['type']]['id'])
-                session.add(contact_source)
-                contact_source_id_list.append(contact_source.contact_source_id)
-            else:
-                empty_webhook_responses.append(webhook['type'])
-        session.commit()
-        logger.info('Empty Webhooks for account {}: {}'.format(account.account_id, empty_webhook_responses))
-
-        if len(contact_source_id_list) > 0:
-            for contact_source_id in contact_source_id_list:
-                handle_webhook_response(account, contact_source_id, session)
-        logger.info('Polled webhooks for {}'.format(account.account_id))
+            if len(contact_source_id_list) > 0:
+                for contact_source_id in contact_source_id_list:
+                    handle_webhook_response(account, contact_source_id, session)
+            logger.info('Polled webhooks for {}'.format(account.account_id))
 
 
 if __name__ == '__main__':

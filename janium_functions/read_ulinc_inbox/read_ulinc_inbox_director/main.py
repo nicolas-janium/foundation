@@ -41,8 +41,7 @@ def main(event, context):
     session = get_session()
 
     accounts = session.query(Account).filter(and_(
-        and_(Account.effective_start_date < datetime.utcnow(), Account.effective_end_date > datetime.utcnow()),
-        Account.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id
+        and_(Account.effective_start_date < datetime.utcnow(), Account.effective_end_date > datetime.utcnow())
     )).all()
 
     accounts_list = []

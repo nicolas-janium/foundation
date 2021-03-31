@@ -136,7 +136,8 @@ def get_li_message_targets(account, janium_campaign, account_local_time):
                 add_contact = False
                 if step.janium_campaign_step_type_id == 1:
                     if i + 1 < len(steps):
-                        if step.janium_campaign_step_delay <= day_diff < steps[i + 1].janium_campaign_step_delay:
+                        if step.janium_campaign_step_delay <= day_diff:
+                        # if step.janium_campaign_step_delay <= day_diff < steps[i + 1].janium_campaign_step_delay:
                             if num_li_messages < i + 1:
                                 add_contact = True
                                 body = step.janium_campaign_step_body
@@ -146,7 +147,8 @@ def get_li_message_targets(account, janium_campaign, account_local_time):
                         else: 
                             continue
                     else:
-                        if step.janium_campaign_step_delay <= day_diff <= step.janium_campaign_step_delay + 1:
+                        # if step.janium_campaign_step_delay <= day_diff <= step.janium_campaign_step_delay + 1:
+                        if step.janium_campaign_step_delay <= day_diff:
                             if num_li_messages < i + 1:
                                 add_contact = True
                                 body = step.janium_campaign_step_body

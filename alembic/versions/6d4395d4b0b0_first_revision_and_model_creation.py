@@ -1,8 +1,8 @@
 """first revision and model creation
 
-Revision ID: b226c34b5b79
+Revision ID: 6d4395d4b0b0
 Revises: 
-Create Date: 2021-03-29 14:39:56.003314
+Create Date: 2021-03-30 12:05:05.191228
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b226c34b5b79'
+revision = '6d4395d4b0b0'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -283,6 +283,7 @@ def upgrade():
     sa.Column('account_id', sa.String(length=36), nullable=False),
     sa.Column('ulinc_client_id', sa.String(length=16), nullable=False),
     sa.Column('ulinc_li_email', sa.String(length=64), nullable=False),
+    sa.Column('ulinc_is_active', sa.Boolean(), nullable=False),
     sa.Column('new_connection_webhook', sa.String(length=256), nullable=False),
     sa.Column('new_message_webhook', sa.String(length=256), nullable=False),
     sa.Column('send_message_webhook', sa.String(length=256), nullable=False),
@@ -341,6 +342,7 @@ def upgrade():
     op.create_table('ulinc_campaign',
     sa.Column('ulinc_campaign_id', sa.String(length=36), nullable=False),
     sa.Column('account_id', sa.String(length=36), nullable=False),
+    sa.Column('ulinc_config_id', sa.String(length=36), nullable=False),
     sa.Column('janium_campaign_id', sa.String(length=36), nullable=True),
     sa.Column('ulinc_campaign_name', sa.String(length=512), nullable=False),
     sa.Column('ulinc_is_active', sa.Boolean(), server_default=sa.text('false'), nullable=False),
@@ -351,6 +353,7 @@ def upgrade():
     sa.Column('updated_by', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['account_id'], ['account.account_id'], ),
     sa.ForeignKeyConstraint(['janium_campaign_id'], ['janium_campaign.janium_campaign_id'], ),
+    sa.ForeignKeyConstraint(['ulinc_config_id'], ['ulinc_config.ulinc_config_id'], ),
     sa.ForeignKeyConstraint(['updated_by'], ['user.user_id'], ),
     sa.PrimaryKeyConstraint('ulinc_campaign_id')
     )

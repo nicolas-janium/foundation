@@ -46,33 +46,31 @@ def main(event, context):
     # accounts = session.query(Client).filter(and_(Client.is_active == 1, Client.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id)).all()
     # accounts = session.query(Account).filter(and_(Account.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id, and_(Account.effective_start_date < datetime.utcnow(), Account.effective_end_date > datetime.utcnow()))).all()
     accounts = session.query(Account).filter(and_(
-        and_(Account.effective_start_date < mtn_time, Account.effective_end_date > mtn_time),
-        Account.ulinc_config_id != Ulinc_config.unassigned_ulinc_config_id,
+        and_(Account.effective_start_date < mtn_time, Account.effective_end_date > mtn_time)
     )).all()
 
     accounts_list = []
     for account in accounts:
         print(account.account_id)
-        if account.ulinc_config.new_connection_webhook:
-            message_json = json.dumps(
-                {"account_id": account.account_id}
-            )
-            message_bytes = message_json.encode('utf-8')
+        message_json = json.dumps(
+            {"account_id": account.account_id}
+        )
+        message_bytes = message_json.encode('utf-8')
 
-            ## Publish message to send-dte-function ###
-            try:
-                if not os.getenv('LOCAL_DEV'):
-                    publish_future = publisher.publish(topic_path, data=message_bytes)
-                    publish_future.result()
-                else:
-                    payload = {"account_id": account.account_id}
-                    payload = json.dumps(payload)
-                    payload = base64.b64encode(str(payload).encode("utf-8"))
-                    # return function.main({"data": payload}, 1)
-                accounts_list.append({"account_id": account.account_id})
-                # return 'OKKKK'
-            except Exception as err:
-                logger.error(str(err))
+        ## Publish message to send-dte-function ###
+        try:
+            if not os.getenv('LOCAL_DEV'):
+                publish_future = publisher.publish(topic_path, data=message_bytes)
+                publish_future.result()
+            else:
+                payload = {"account_id": account.account_id}
+                payload = json.dumps(payload)
+                payload = base64.b64encode(str(payload).encode("utf-8"))
+                # return function.main({"data": payload}, 1)
+            accounts_list.append({"account_id": account.account_id})
+            # return 'OKKKK'
+        except Exception as err:
+            logger.error(str(err))
     logger.info('Messages to janium-poll-webhook-topic published for accounts {}'.format(accounts_list))
 
 if __name__ == '__main__':
